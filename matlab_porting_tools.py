@@ -3,12 +3,11 @@
 #
 # Module containing a few ported Matlab functions that makes it easier
 # for me to port other, larger Matlab functions.  Some of these are 
-# built-in Matlab functions (e.g. fileparts()), some of them are
+# built-in Matlab functions (e.g. fileparts()), some are 
 # new utility functions my Matlab workflow depends on (e.g. 
-# insert_before_extension()) .
-#
-# Some of these are silly one-liners where it's easier for me to remember
-# my Matlab-universe words than the Python-universe words, e.g. string_starts_with
+# insert_before_extension()), and some are silly one-liners where it's
+# easier for me to remember my Matlab-universe words than the Python-universe
+# words, e.g. string_starts_with().
 #
 # Owner: Dan Morris (dan@microsoft.com)
 #
