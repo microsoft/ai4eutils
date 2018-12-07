@@ -40,7 +40,7 @@ def fileparts(n):
 if False:
 
     #%% Test driver for fileparts()
-    # from danUtil.matlab_porting_tools import fileparts
+    # from matlab_porting_tools import fileparts
     
     TEST_STRINGS = [
             r'c:\blah\BLAH.jpg',
@@ -86,7 +86,7 @@ if False:
 
     #%% Test driver for insert_before_extension
     
-    # from danUtil.matlab_porting_tools import insert_before_extension
+    # from matlab_porting_tools import insert_before_extension
     
     TEST_STRINGS = [
             r'c:\blah\BLAH.jpg',
