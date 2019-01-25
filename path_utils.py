@@ -9,7 +9,7 @@
 
 import os
 
-def recursiveFileList(baseDir, bConvertSlashes=True):
+def recursive_file_list(baseDir, bConvertSlashes=True):
     """
     Enumerate files (not directories) in [baseDir], optionally converting \ to /
     """
@@ -26,7 +26,7 @@ def recursiveFileList(baseDir, bConvertSlashes=True):
     return allFiles
 
 # http://nicks-liquid-soapbox.blogspot.com/2011/03/splitting-path-to-list-in-python.html
-def splitpath(path, maxdepth=100):
+def split_path(path, maxdepth=100):
     """
     Splits [path] into all its constituent tokens, e.g.:
     
