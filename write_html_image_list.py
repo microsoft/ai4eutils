@@ -4,7 +4,7 @@
 # Given a list of image file names, writes an HTML file that
 # shows all those images, with optional one-line headers above each.
 #
-# Each "filename" can also be a list array of filenames (they will share a title).
+# Each "filename" can also be a dict with elements 'filename','title','imageStyle','textStyle'
 #
 # Strips directory information away if options.makeRelative == 1.
 #
@@ -22,7 +22,7 @@ import matlab_porting_tools as mpt
 
 #%% write_html_image_list
 
-def write_html_image_list(filename=None,imageFilenames=None,titles=(),options={}):
+def write_html_image_list(filename=None,images=None,options={}):
 
     # returns an options struct
     
@@ -37,10 +37,15 @@ def write_html_image_list(filename=None,imageFilenames=None,titles=(),options={}
     
     if 'trailerHtml' not in options:
         options['trailerHtml'] = ''    
-
-    if 'imageStyle' not in options:
-        options['imageStyle'] = ''    
     
+    if 'defaultTextStyle' not in options:
+        options['defaultTextStyle'] = \
+        "font-family:calibri,verdana,arial;font-weight:bold;font-size:150%;text-align:left;margin:0px;"
+
+    if 'defaultImageStyle' not in options:
+        options['defaultImageStyle'] = \
+        "margin:0px;margin-top:5px;margin-bottom:5px;"
+        
     # Possibly split the html output for figures into multiple files; Chrome gets sad with
     # thousands of images in a single tab.        
     if 'maxFiguresPerHtmlFile' not in options:
@@ -49,25 +54,41 @@ def write_html_image_list(filename=None,imageFilenames=None,titles=(),options={}
     if filename == None:
         return options
     
+    # images may be a list of images or a list of image/style/title dictionaries, 
+    # enforce that it's the latter to simplify downstream code
+    for iImage,imageInfo in enumerate(images):
+        if isinstance(imageInfo,str):
+            imageInfo = {'filename':imageInfo,'imageStyle':'','title':'','textStyle':''}            
+        if 'filename' not in imageInfo:
+            imageInfo['filename'] = ''
+        if 'imageStyle' not in imageInfo:
+            imageInfo['imageStyle'] = options['defaultImageStyle']
+        if 'title' not in imageInfo:
+            imageInfo['title'] = ''
+        if 'textStyle' not in imageInfo:
+            textStyle = options['defaultTextStyle']
+            imageInfo['textStyle'] = options['defaultTextStyle']
+        images[iImage] = imageInfo            
+        
     # Remove leading directory information from filenames if requested
     if options['makeRelative'] == 1:
-        for iImage in range(0,len(imageFilenames)):
-            _,n,e = mpt.fileparts(imageFilenames[iImage])
-            imageFilenames[iImage] = n + e
+        
+        for iImage in range(0,len(images)):
+            _,n,e = mpt.fileparts(images[iImage]['filename'])
+            images[iImage]['filename'] = n + e
         
     elif options['makeRelative'] == 2:
+        
         baseDir,_,_ = mpt.fileparts(filename)
         if len(baseDir) > 1 and baseDir[-1] != '\\':
             baseDir = baseDir + '\\'
         
-        for iImage in range(0,len(imageFilenames)):
-            fn = imageFilenames[iImage]
+        for iImage in range(0,len(images)):
+            fn = images[iImage]['filename']
             fn = fn.replace(baseDir,'')
-            imageFilenames[iImage] = fn        
+            images[iImage]['filename'] = fn        
     
-    nImages = len(imageFilenames)
-    if len(titles) != 0:
-        assert len(titles) == nImages,'Title/image list mismatch'    
+    nImages = len(images)
     
     # If we need to break this up into multiple files...
     if nImages > options['maxFiguresPerHtmlFile']:
@@ -90,6 +111,7 @@ def write_html_image_list(filename=None,imageFilenames=None,titles=(),options={}
         fMeta.write('<table border = 0 cellpadding = 2>\n')
         
         for startingIndex in figureFileStartingIndices:
+            
             iStart = startingIndex
             iEnd = startingIndex+options['maxFiguresPerHtmlFile']-1;
             if iEnd >= nImages:
@@ -102,20 +124,14 @@ def write_html_image_list(filename=None,imageFilenames=None,titles=(),options={}
             fMeta.write('<a href="{}">Figures for images {} through {}</a></p></td></tr>\n'.format(
                 localFiguresHtmlFilename,iStart,iEnd))
             
-            localImageFilenames = imageFilenames[iStart:iEnd+1]
-            
-            if len(titles) == 0:
-                localTitles = []
-            else:
-                localTitles = titles[iStart:iEnd+1]            
+            localImages = images[iStart:iEnd+1]
             
             localOptions = options.copy();
             localOptions['headerHtml'] = '';
             localOptions['trailerHtml'] = '';
             
             # Make a recursive call for this image set
-            write_html_image_list(localFiguresHtmlFilename,localImageFilenames,localTitles,
-                localOptions)
+            write_html_image_list(localFiguresHtmlFilename,localImages,localOptions)
             
         # ...for each page of images
         
@@ -129,6 +145,7 @@ def write_html_image_list(filename=None,imageFilenames=None,titles=(),options={}
     # ...if we have to make multiple sub-pages
         
     bCleanupFile = False
+    
     if options['fHtml'] == -1:
         bCleanupFile = True;
         fHtml = open(filename,'w')
@@ -140,26 +157,23 @@ def write_html_image_list(filename=None,imageFilenames=None,titles=(),options={}
     fHtml.write(options['headerHtml'])
     
     # Write out images
-    for iImage in range(0,len(imageFilenames)):
+    for iImage,image in enumerate(images):
         
-        if len(titles) > 0:
-            s = titles[iImage];
+        title = image['title']
+        imageStyle = image['imageStyle']
+        textStyle = image['textStyle']
+        filename = image['filename']
+        
+        if len(title) > 0:            
             fHtml.write(
-                    '<p style="font-family:calibri,verdana,arial;font-weight:bold;font-size:150%;text-align:left;">{}</p>\n'\
-                    .format(s))            
+                    '<p style="{}">{}</p>\n'\
+                    .format(textStyle,title))            
 
-        # If we have multiple images for this same title
-        if (isinstance(imageFilenames[iImage],list)):
-            files = imageFilenames[iImage];
-            for iFile in range(0,len(files)):
-                fHtml.write('<img src="{}" style="{}"><br/>\n'.format(files(iFile),options['imageStyle']))
-                if iFile != len(files)-1:
-                    fHtml.write('<br/>')                
-            # ...for each file in this group
-        else:
-            fHtml.write('<img src="{}" style="{}"><br/>\n'.\
-                        format(imageFilenames[iImage],options['imageStyle']))
+        fHtml.write('<img src="{}" style="{}">\n'.format(filename,imageStyle))
         
+        if iImage != len(images)-1:
+            fHtml.write('<br/>')             
+            
     # ...for each image we need to write
     
     fHtml.write(options['trailerHtml'])
@@ -170,5 +184,3 @@ def write_html_image_list(filename=None,imageFilenames=None,titles=(),options={}
         fHtml.close()    
 
 # ...function
-
-
