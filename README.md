@@ -2,7 +2,21 @@
 
 Shared utilities / handed-off scripts for the AI for Earth team
 
-The general convention in this repo is that users who want to consume these utilities will add the top-level path of the repo to their Python path, so it's OK to assume that other packages/modules within the repo are available.  The "scrap" directory can be used for standalone, one-time-use scripts that you might otherwise have emailed to someone.
+The general convention in this repo is that users who want to consume these utilities will add the top-level path of the repo to their Python path, so it's okay to assume that other packages/modules within the repo are available.  The "scrap" directory can be used for standalone, one-time-use scripts that you might otherwise have emailed to someone.
+
+# Contents
+
+- `path_utils.py`: Miscellaneous useful utils for path manipulation, things that could *almost* be in os.path, but aren't.
+
+- `matlab_porting_tools.py`: A few ported Matlab functions that makes it easier to port other, larger Matlab functions to Python.
+
+- `write_html_image_list.py`: Given a list of image file names, writes an HTML file that shows all those images, with optional one-line headers above each.
+
+- `sas_blob_utils.py`: Helper functions for dealing with Shared Access Signatures (SAS) tokens
+for Azure Blob Storage.
+
+- `TF_OD_API`: A Dockerfile and a script to prepare a Docker image for use with the [Tensorflow Object Detection API](https://github.com/tensorflow/models/tree/master/research/object_detection).
+
 
 # Contributing
 
