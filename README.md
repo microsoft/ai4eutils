@@ -15,7 +15,7 @@ The general convention in this repo is that users who want to consume these util
 - `sas_blob_utils.py`: Helper functions for dealing with Shared Access Signatures (SAS) tokens
 for Azure Blob Storage.
 
-- `TF_OD_API`: A Dockerfile and a script to prepare a Docker image for use with the [Tensorflow Object Detection API](https://github.com/tensorflow/models/tree/master/research/object_detection).
+- `TF_OD_API`: A Dockerfile and a script to prepare a Docker image for use with the [TensorFlow Object Detection API](https://github.com/tensorflow/models/tree/master/research/object_detection).
 
 - `gDrive_download.py`: Semi-automatic script for bulk download from shared Google Drives using the gDrive Python SDK.
 
