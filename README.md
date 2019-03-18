@@ -1,6 +1,6 @@
 # Overview
 
-Shared utilities / handed-off scripts for the AI for Earth team
+Shared utilities developed by the Microsoft AI for Earth team
 
 The general convention in this repo is that users who want to consume these utilities will add the top-level path of the repo to their Python path, so it's okay to assume that other packages/modules within the repo are available.  The "scrap" directory can be used for standalone, one-time-use scripts that you might otherwise have emailed to someone.
 
@@ -16,6 +16,12 @@ The general convention in this repo is that users who want to consume these util
 for Azure Blob Storage.
 
 - `TF_OD_API`: A Dockerfile and a script to prepare a Docker image for use with the [Tensorflow Object Detection API](https://github.com/tensorflow/models/tree/master/research/object_detection).
+
+- `gDrive_download.py`: Semi-automatic script for bulk download from shared Google Drives using the gDrive Python SDK.
+
+- `azure-sdk-calc-storage-size`: Script for recursively computing the size of all blobs and files in an Azure subscription.
+
+- `azure-metrics-calc-storage-size`: Script for computing the total size of all storage accounts in an Azure subscription (using Azure Metrics).
 
 
 # Contributing
