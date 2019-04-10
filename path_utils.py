@@ -37,6 +37,6 @@ def split_path(path, maxdepth=100):
     ['c:\\', 'blah', 'boo', 'goo.txt']
     """
     ( head, tail ) = os.path.split(path)
-    return splitpath(head, maxdepth - 1) + [ tail ] \
+    return split_path(head, maxdepth - 1) + [ tail ] \
         if maxdepth and head and head != path \
         else [ head or tail ]
