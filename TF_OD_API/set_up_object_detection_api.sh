@@ -9,7 +9,7 @@ pip install tqdm Cython contextlib2 pillow lxml jupyter matplotlib
 
 cd /lib/tf
 
-git clone https://github.com/tensorflow/models  # Dockerfile moves this script to /lib/tf/ so that TFODAPI is installed there
+git clone https://github.com/tensorflow/models models  # Dockerfile moves this script to /lib/tf/ so that TFODAPI is installed there
 cd models
 git reset --hard 8367cf6dabe11adf7628541706b660821f397dce  # this is a good commit from 2019/03/06 that works with Python3
 cd ..
@@ -17,7 +17,7 @@ cd ..
 git clone https://github.com/cocodataset/cocoapi.git
 cd cocoapi/PythonAPI
 make
-cp -r pycocotools ../../models/research/
+cp -r pycocotools /lib/tf/models/research/
 cd ../..
 
 mkdir protoc_3.3
