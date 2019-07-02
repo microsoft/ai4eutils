@@ -44,11 +44,13 @@ class AzureStorageSize:
         self.storage_client = StorageManagementClient(self.credentials, self.subscription_id)
         self.log = log
         
+        
     def get_all_storage_accounts(self):
         
         storage_accounts = self.storage_client.storage_accounts.list()
         
         return storage_accounts
+
 
     def get_storage_account_resource_group(self, resource_id): 
         
@@ -57,12 +59,14 @@ class AzureStorageSize:
         
         return resource_group
     
+    
     def get_storage_account_keys(self, resource_group_name, storage_account_name):   
         
         storage_keys = self.storage_client.storage_accounts.list_keys(resource_group_name, storage_account_name)
         storage_keys = {v.key_name: v.value for v in storage_keys.keys}
         
         return storage_keys
+
 
     def get_blob_containers_by_storage_account(self, storage_account_name, account_key):    
         
@@ -71,12 +75,14 @@ class AzureStorageSize:
         
         return containers
 
+
     def get_all_blobs_by_blob_container_name(self, storage_account_name, account_key, container_name):
         
         block_blob_service = BlockBlobService(account_name=storage_account_name, account_key=account_key)
         blobs = block_blob_service.list_blobs(container_name)
         
         return blobs
+
 
     def log_info(self, message, type):     
        
