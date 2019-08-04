@@ -30,7 +30,7 @@ def recursive_file_list(baseDir, bConvertSlashes=True):
 
     return allFiles
 
-# http://nicks-liquid-soapbox.blogspot.com/2011/03/splitting-path-to-list-in-python.html
+
 def split_path(path, maxdepth=100):
     """
     Splits [path] into all its constituent tokens, e.g.:
@@ -40,13 +40,48 @@ def split_path(path, maxdepth=100):
     ...becomes:
         
     ['c:\\', 'blah', 'boo', 'goo.txt']
+    
+    http://nicks-liquid-soapbox.blogspot.com/2011/03/splitting-path-to-list-in-python.html
     """
     ( head, tail ) = os.path.split(path)
     return split_path(head, maxdepth - 1) + [ tail ] \
         if maxdepth and head and head != path \
         else [ head or tail ]
         
-        
+          
+def top_level_folder(p):
+    """
+    Gets the top-level folder from the path *p*; on Windows, will use the top-level folder
+    that isn't the drive.  E.g., top_level_folder(r"c:\blah\foo") returns "c:\blah".  Does not
+    include the leaf node, i.e. top_level_folder('/blah/foo') returns '/blah'.
+    """
+    if p == '':
+        return ''
+    
+    # Path('/blah').parts is ('/','blah')
+    parts = split_path(p)
+    
+    if len(parts) == 1:
+        return parts[0]
+    
+    drive = os.path.splitdrive(p)[0]
+    if parts[0] == drive or parts[0] == drive + '/' or parts[0] == drive + '\\' or parts[0] in ['\\','/']: 
+        return os.path.join(parts[0],parts[1])    
+    else:
+        return parts[0]
+    
+if False:        
+    p = 'blah/foo/bar'; s = top_level_folder(p); print(s); assert s == 'blah'
+    p = '/blah/foo/bar'; s = top_level_folder(p); print(s); assert s == '/blah'
+    p = 'bar'; s = top_level_folder(p); print(s); assert s == 'bar'
+    p = ''; s = top_level_folder(p); print(s); assert s == ''
+    p = 'c:\\'; s = top_level_folder(p); print(s); assert s == 'c:\\'
+    p = r'c:\blah'; s = top_level_folder(p); print(s); assert s == 'c:\\blah'
+    p = r'c:\foo'; s = top_level_folder(p); print(s); assert s == 'c:\\foo'
+    p = r'c:/foo'; s = top_level_folder(p); print(s); assert s == 'c:/foo'
+    p = r'c:\foo/bar'; s = top_level_folder(p); print(s); assert s == 'c:\\foo'
+    
+            
 #%% Image-related path functions
         
 imageExtensions = ['.jpg','.jpeg','.gif','.png']
