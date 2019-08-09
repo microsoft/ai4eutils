@@ -10,6 +10,8 @@
 
 import os
 import glob
+import datetime
+import ntpath
 
 
 #%% General path functions
@@ -30,7 +32,7 @@ def recursive_file_list(baseDir, bConvertSlashes=True):
 
     return allFiles
 
-# http://nicks-liquid-soapbox.blogspot.com/2011/03/splitting-path-to-list-in-python.html
+
 def split_path(path, maxdepth=100):
     """
     Splits [path] into all its constituent tokens, e.g.:
@@ -40,30 +42,114 @@ def split_path(path, maxdepth=100):
     ...becomes:
         
     ['c:\\', 'blah', 'boo', 'goo.txt']
+    
+    http://nicks-liquid-soapbox.blogspot.com/2011/03/splitting-path-to-list-in-python.html
     """
+    
     ( head, tail ) = os.path.split(path)
     return split_path(head, maxdepth - 1) + [ tail ] \
         if maxdepth and head and head != path \
         else [ head or tail ]
         
+
+def fileparts(n):
+    """
+    p,n,e = fileparts(filename)    
+     
+    fileparts(r'c:\blah\BLAH.jpg') returns ('c:\blah','BLAH','.jpg')
+     
+    Note that the '.' lives with the extension, and separators have been removed.
+    """
+    
+    p = ntpath.dirname(n)
+    basename = ntpath.basename(n)
+    n,e = ntpath.splitext(basename)
+    return p,n,e
+    
+
+if False:
+
+    ##%% Test driver for fileparts()
+    # from matlab_porting_tools import fileparts
+    
+    TEST_STRINGS = [
+            r'c:\blah\BLAH.jpg',
+            r'c:\blah.jpg',
+            r'blah',
+            r'c:\blah',
+            r'c:\blah\BLAH',
+            r'blah.jpg'
+            ]
+    
+    for s in TEST_STRINGS:
+        p,n,e = fileparts(s)
+        print('{}:\n[{}],[{}],[{}]\n'.format(s,p,n,e))
+        
+
+def insert_before_extension(filename,s=''):
+    """
+    function filename = insert_before_extension(filename,s)
+    
+    Inserts the string [s] before the extension in [filename], separating with '.'.  
+    
+    If [s] is empty, generates a date/timestamp.
+    
+    If [filename] has no extension, appends [s].    
+    """
+    
+    assert len(filename) > 0
+    
+    if len(s) == 0:
+        s = datetime.datetime.now().strftime('%Y.%m.%d.%H.%M.%S')
+
+    p,n,e = fileparts(filename);
+    
+    fn = n + '.' + s + e
+    filename = os.path.join(p,fn);
+    
+    return filename
+
+
+if False:
+
+    ##%% Test driver for insert_before_extension
+    
+    # from matlab_porting_tools import insert_before_extension
+    
+    TEST_STRINGS = [
+            r'c:\blah\BLAH.jpg',
+            r'c:\blah.jpg',
+            r'blah',
+            r'c:\blah',
+            r'c:\blah\BLAH',
+            r'blah.jpg'
+            ]
+    
+    for s in TEST_STRINGS:
+        sOut = insert_before_extension(s)
+        print('{}: {}'.format(s,sOut))
+
+
         
 #%% Image-related path functions
         
 imageExtensions = ['.jpg','.jpeg','.gif','.png']
     
 def is_image_file(s):
-    '''
+    """
     Check a file's extension against a hard-coded set of image file extensions    '
-    '''
+    """
+    
     ext = os.path.splitext(s)[1]
     return ext.lower() in imageExtensions
     
     
 def find_image_strings(strings):
-    '''
+    """
     Given a list of strings that are potentially image file names, look for strings
     that actually look like image file names (based on extension).
-    '''
+    """
+    
     imageStrings = []
     bIsImage = [False] * len(strings)
     for iString,f in enumerate(strings):
@@ -75,9 +161,10 @@ def find_image_strings(strings):
 
     
 def find_images(dirName,bRecursive=False):
-    '''
-    Find all files in a directory that look like image file names
-    '''
+    """
+    Find all files in a directory that look like image file names.
+    """
+    
     if bRecursive:
         strings = glob.glob(os.path.join(dirName,'**','*.*'), recursive=True)
     else:
