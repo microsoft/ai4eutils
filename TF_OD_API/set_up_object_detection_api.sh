@@ -7,6 +7,8 @@ apt-get install -y git wget python3-tk
 pip install --upgrade pip
 pip install tqdm Cython contextlib2 pillow lxml jupyter matplotlib
 
+cd /lib/tf
+
 git clone https://github.com/tensorflow/models  # Dockerfile moves this script to /lib/tf/ so that TFODAPI is installed there
 cd models
 git reset --hard 8367cf6dabe11adf7628541706b660821f397dce  # this is a good commit from 2019/03/06 that works with Python3
