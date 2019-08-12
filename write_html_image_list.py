@@ -46,7 +46,7 @@ def write_html_image_list(filename=None,images=None,options={}):
     if 'defaultImageStyle' not in options:
         options['defaultImageStyle'] = \
         "margin:0px;margin-top:5px;margin-bottom:5px;"
-        
+            
     # Possibly split the html output for figures into multiple files; Chrome gets sad with
     # thousands of images in a single tab.        
     if 'maxFiguresPerHtmlFile' not in options:
@@ -165,7 +165,11 @@ def write_html_image_list(filename=None,images=None,options={}):
         textStyle = image['textStyle']
         filename = image['filename']
         
-        if len(title) > 0:            
+        # Remove unicode characters
+        title = title.encode('ascii','ignore').decode('ascii')
+        filename = filename.encode('ascii','ignore').decode('ascii')
+        
+        if len(title) > 0:       
             fHtml.write(
                     '<p style="{}">{}</p>\n'\
                     .format(textStyle,title))            

@@ -15,6 +15,12 @@ import humanfriendly
 
 #%% Auth and storage computation classes
 
+class SizeOptions:
+    
+    account_names = None
+    container_names = None
+    
+    
 class Authentication:
     
     # This refers to the on.microsoft.com directory, change this to enumerate alternative
@@ -44,11 +50,13 @@ class AzureStorageSize:
         self.storage_client = StorageManagementClient(self.credentials, self.subscription_id)
         self.log = log
         
+        
     def get_all_storage_accounts(self):
         
         storage_accounts = self.storage_client.storage_accounts.list()
         
         return storage_accounts
+
 
     def get_storage_account_resource_group(self, resource_id): 
         
@@ -57,12 +65,14 @@ class AzureStorageSize:
         
         return resource_group
     
+    
     def get_storage_account_keys(self, resource_group_name, storage_account_name):   
         
         storage_keys = self.storage_client.storage_accounts.list_keys(resource_group_name, storage_account_name)
         storage_keys = {v.key_name: v.value for v in storage_keys.keys}
         
         return storage_keys
+
 
     def get_blob_containers_by_storage_account(self, storage_account_name, account_key):    
         
@@ -71,12 +81,14 @@ class AzureStorageSize:
         
         return containers
 
+
     def get_all_blobs_by_blob_container_name(self, storage_account_name, account_key, container_name):
         
         block_blob_service = BlockBlobService(account_name=storage_account_name, account_key=account_key)
         blobs = block_blob_service.list_blobs(container_name)
         
         return blobs
+
 
     def log_info(self, message, type):     
        
@@ -105,16 +117,27 @@ class AzureStorageSize:
             self.log.log_blob_container_info(message)
 
 
-    def get_storage_size(self):
+    def get_storage_size(self, options=None):
         
         try:
+            
+            if options is None:
+                
+                options = SizeOptions()
+                
             storage_accounts = self.get_all_storage_accounts()
             count = 0
 
             for storage_account in storage_accounts:
                 
-                count += 1     
                 storage_account_name = storage_account.name
+                
+                if options.account_names is not None and storage_account_name not in options.account_names:
+                    
+                    print("Skipping storage account: " + storage_account_name , Log_type.debug)
+                    continue
+                
+                count += 1     
                 self.log_info("\nProcessing storage account: " + storage_account_name , Log_type.debug)
 
                 total_account_size = 0
@@ -128,6 +151,12 @@ class AzureStorageSize:
                 for container in blob_containers:
                     
                     container_name = container.name
+                    
+                    if options.container_names is not None and container_name not in options.container_names:
+                    
+                        print("Skipping container: " + container_name, Log_type.debug)
+                        continue                    
+                
                     self.log_info("Reading size for container: " +  container_name, Log_type.debug)
                     
                     total_blob_container_size = 0
@@ -174,6 +203,9 @@ if __name__ == '__main__':
 
     #%%
     
+    options = SizeOptions()
+    # options.account_names = ['account_name']
+    
     log = CustomLogging()
     
     auth = Authentication()
@@ -190,7 +222,7 @@ if __name__ == '__main__':
     
     azure_st = AzureStorageSize(credentials, subscription_id, log)
     azure_st.log_info("Program started on: " + str(datetime.datetime.now()) + "\n", Log_type.debug)
-    azure_st.get_storage_size()
+    azure_st.get_storage_size(options)
     azure_st.log_info("\n\nProgram ended on: " + str(datetime.datetime.now()) + "\n", Log_type.debug)
 
     print('Finished writing logs to:\n{}\n{}\n\n'.format(log.debug_log,

@@ -5,8 +5,9 @@ FROM tensorflow/tensorflow:1.12.0-gpu-py3
 
 RUN mkdir /lib/tf
 COPY set_up_object_detection_api.sh /lib/tf/set_up_object_detection_api.sh
+
 RUN sh /lib/tf/set_up_object_detection_api.sh
 
 ENV PYTHONPATH=$PYTHONPATH:/lib/tf/models/research:/lib/tf/models/research/slim
 
-CMD [“echo”,”Image created”] 
+CMD ["echo", "Image created"] 
