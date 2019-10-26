@@ -194,7 +194,8 @@ def find_image_strings(strings):
     
 def find_images(dirName,bRecursive=False):
     """
-    Find all files in a directory that look like image file names.
+    Find all files in a directory that look like image file names.  Returns absolute
+    paths.
     """
     
     if bRecursive:
