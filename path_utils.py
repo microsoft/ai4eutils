@@ -51,6 +51,7 @@ def split_path(path, maxdepth=100):
         if maxdepth and head and head != path \
         else [ head or tail ]
         
+
 def fileparts(n):
     """
     p,n,e = fileparts(filename)    
