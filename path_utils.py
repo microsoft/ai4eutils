@@ -205,3 +205,51 @@ def find_images(dirName,bRecursive=False):
     imageStrings = find_image_strings(strings)
     
     return imageStrings
+
+
+#%% Filename-cleaning functions
+
+import unicodedata
+import string
+
+valid_filename_chars = "~-_.() %s%s" % (string.ascii_letters, string.digits)
+valid_path_chars = valid_filename_chars + "\\/:"
+separator_chars = ":/\\"
+char_limit = 255
+
+def clean_filename(filename, whitelist=valid_filename_chars):
+    """
+    Removes invalid characters (on any reasonable OS) in a filename, trims to a 
+    maximum length, and removes unicode characters.
+    
+    Does not allow :\/ , use clean_path if you want to preserve those
+    
+    Adapted from: https://gist.github.com/wassname/1393c4a57cfcbf03641dbc31886123b8    
+    """
+    # keep only valid ascii chars
+    cleaned_filename = unicodedata.normalize('NFKD', filename).encode('ASCII', 'ignore').decode()
+    
+    # keep only whitelisted chars
+    cleaned_filename = ''.join([c for c in cleaned_filename if c in whitelist])
+    return cleaned_filename[:char_limit]  
+
+
+def clean_path(pathname, whitelist=valid_path_chars):
+    """
+    Removes invalid characters (on any reasonable OS) in a filename, trims to a 
+    maximum length, and removes unicode characters.
+    """
+    return clean_filename(pathname,whitelist=whitelist)
+
+
+def flatten_path(pathname):
+    """
+    Removes invalid characters (on any reasonable OS) in a filename, trims to a 
+    maximum length, and removes unicode characters, then replaces all valid separators
+    with '~'.
+    """
+    s = clean_path(pathname)
+    for c in separator_chars:
+        s = s.replace(c,'~')
+    return s
+
