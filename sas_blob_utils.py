@@ -5,6 +5,7 @@ import io
 from datetime import datetime, timedelta
 from urllib import parse
 
+from tqdm import tqdm
 from azure.storage.blob import (
     BlockBlobService,
     ContainerPermissions,
@@ -183,6 +184,7 @@ class SasBlob:
         Returns:
             A list of blob names/paths, of length max_number_to_list or shorter.
         """
+        print('listing blobs...')
         if SasBlob.get_resource_type_from_uri(sas_uri) != 'container':
             raise ValueError('The SAS token provided is not for a container.')
 
@@ -198,21 +200,23 @@ class SasBlob:
 
         list_blobs = []
 
-        while True:
-            for blob in generator:
-                if blob_suffix is None or blob.name.lower().endswith(blob_suffix):
-                    list_blobs.append(blob.name)
+        with tqdm() as pbar:
+            while True:
+                for blob in generator:
+                    if blob_suffix is None or blob.name.lower().endswith(blob_suffix):
+                        list_blobs.append(blob.name)
+                        pbar.update(1)
 
-            next_marker = generator.next_marker
-            if next_marker == '':
-                # exhaustively listed all blobs in the container
-                return list_blobs[:max_number_to_list]
+                next_marker = generator.next_marker
+                if next_marker == '':
+                    # exhaustively listed all blobs in the container
+                    return list_blobs[:max_number_to_list]
 
-            if len(list_blobs) > max_number_to_list:
-                return list_blobs[:max_number_to_list]
+                if len(list_blobs) > max_number_to_list:
+                    return list_blobs[:max_number_to_list]
 
-            generator = blob_service.list_blobs(container_name, prefix=blob_prefix, num_results=4000,
-                                                marker=next_marker)
+                generator = blob_service.list_blobs(container_name, prefix=blob_prefix, num_results=4000,
+                                                    marker=next_marker)
         # list_blobs will have been returned by one of the two stopping conditions
 
     @staticmethod
