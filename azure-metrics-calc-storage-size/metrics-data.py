@@ -145,3 +145,4 @@ if __name__ == '__main__':
     
      file_name = get_used_avg_blob_capacity(credentials,subscription_id)
      os.startfile(file_name)
+     

@@ -10,8 +10,6 @@ import utils
 import datetime
 import humanfriendly
 
-#TODO: clear logs from previous runs
-
 
 #%% Auth and storage computation classes
 
@@ -204,7 +202,7 @@ if __name__ == '__main__':
     #%%
     
     options = SizeOptions()
-    # options.account_names = ['account_name']
+    # options.account_names = ['']
     
     log = CustomLogging()
     
@@ -228,6 +226,4 @@ if __name__ == '__main__':
     print('Finished writing logs to:\n{}\n{}\n\n'.format(log.debug_log,
           log.blob_container_info_log,log.storage_info_log))
     
-
-
 
