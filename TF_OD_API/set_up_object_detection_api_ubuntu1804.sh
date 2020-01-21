@@ -1,6 +1,10 @@
 # Script to install the TFODAPI on a Linux VM or a Docker container. 
 # It carries out the installation steps described here: https://github.com/tensorflow/models/blob/master/research/object_detection/g3doc/installation.md
 
+#added by ross jan 20, 2020 to get around interactive install issues with tzdata
+TZ = America/Honolulu
+ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
 apt-get update -y
 apt-get install -y git wget python3-tk
 

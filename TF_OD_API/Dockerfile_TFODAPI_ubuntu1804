@@ -6,6 +6,10 @@ FROM tensorflow/tensorflow
 RUN mkdir /lib/tf
 COPY set_up_object_detection_api_ubuntu1804.sh /lib/tf/set_up_object_detection_api_ubuntu1804.sh
 
+#added by ross to avoid interactive input when running apt-get in the set_up_object_detection_api_ubuntu1804.py script.
+#ENV TZ=Europe/Minsk
+#RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
 RUN sh /lib/tf/set_up_object_detection_api_ubuntu1804.sh
 
 ENV PYTHONPATH=$PYTHONPATH:/lib/tf/models/research:/lib/tf/models/research/slim
