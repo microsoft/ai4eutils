@@ -1,0 +1,13 @@
+# Dockerfile creating a container for use with the TensorFlow Object Detection API 
+# Modified from Dockerfile_TFODAPI to use Tensorflow 1.15 gpu. If you want the CPU installation use tensorflow/tensorflow:1.15.0-py3. 
+
+FROM tensorflow/tensorflow:1.15.0-gpu-py3 
+
+RUN mkdir /lib/tf
+COPY set_up_object_detection_api_tf1-15.sh /lib/tf/set_up_object_detection_api_tf1-15.sh
+
+RUN sh /lib/tf/set_up_object_detection_api_tf1-15.sh
+
+ENV PYTHONPATH=$PYTHONPATH:/lib/tf/models/research:/lib/tf/models/research/slim
+
+CMD ["echo", "Image created"] 
