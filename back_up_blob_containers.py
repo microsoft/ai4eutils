@@ -122,7 +122,7 @@ for c in source_container_names:
     cmd += source_account_url_blob + '/' + c + '/' + source_sas_token
     cmd += '" "'
     cmd += target_account_url_blob + '/' + c + '/' + target_sas_token
-    cmd += '" --delete-destination=True'
+    cmd += '" --delete-destination=True --log-level=NONE'
     
     azcopy_commands.append(cmd)
 
