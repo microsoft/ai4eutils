@@ -23,6 +23,9 @@ for Azure Blob Storage.
 
 - `azure-metrics-calc-storage-size`: Script for computing the total size of all storage accounts in an Azure subscription (using Azure Metrics).
 
+- `ai4e_azure_utils.py`: Functions for interacting with the Azure Storage SDK
+
+- `ai4e_web_utils.py`: Functions for interacting with http requests
 
 # Contributing
 
