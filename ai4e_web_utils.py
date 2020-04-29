@@ -48,8 +48,8 @@ def download_url(url, destination_filename=None, progress_updater=None,
         progress_updater = DownloadProgressBar()
         
     if temp_dir is None:
-        temp_dir = os.path.join(tempfile.gettempdir(),'species_classification')
-        os.makedirs(temp_dir,exist_ok=True)
+        temp_dir = os.path.join(tempfile.gettempdir(),'ai4e')
+    os.makedirs(temp_dir,exist_ok=True)
         
     # This is not intended to guarantee uniqueness, we just know it happens to guarantee
     # uniqueness for this application.
