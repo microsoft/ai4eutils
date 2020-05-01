@@ -39,30 +39,37 @@ class DownloadProgressBar():
             
             
 def download_url(url, destination_filename=None, progress_updater=None, 
-                 force_download=False, temp_dir=None):
+                 force_download=False, output_dir=None, verbose=False):
     """
-    Download a URL to a temporary file
+    Download a URL, optionally downloading to a temporary file
     """
 
-    if progress_updater is None:
-        progress_updater = DownloadProgressBar()
-        
-    if temp_dir is None:
-        temp_dir = os.path.join(tempfile.gettempdir(),'ai4e')
-    os.makedirs(temp_dir,exist_ok=True)
+    # if progress_updater is None:
+    #    progress_updater = DownloadProgressBar()
         
     # This is not intended to guarantee uniqueness, we just know it happens to guarantee
     # uniqueness for this application.
     if destination_filename is None:
+    
+        if output_dir is None:
+            output_dir = os.path.join(tempfile.gettempdir(),'ai4e')
+            os.makedirs(output_dir,exist_ok=True)
+        
         url_as_filename = url.replace('://', '_').replace('.', '_').replace('/', '_')
         destination_filename = \
-            os.path.join(temp_dir,url_as_filename)
+            os.path.join(output_dir,url_as_filename)
+            
     if (not force_download) and (os.path.isfile(destination_filename)):
-        print('Bypassing download of already-downloaded file {}'.format(os.path.basename(url)))
+        if verbose:
+            print('Bypassing download of already-downloaded file {}'.format(os.path.basename(url)))
         return destination_filename
-    print('Downloading file {}'.format(os.path.basename(url)),end='')
+    
+    if verbose:
+        print('Downloading file {}'.format(os.path.basename(url)),end='')
     urllib.request.urlretrieve(url, destination_filename, progress_updater)  
     assert(os.path.isfile(destination_filename))
     nBytes = os.path.getsize(destination_filename)
-    print('...done, {} bytes.'.format(nBytes))
+    if verbose:
+        print('...done, {} bytes.'.format(nBytes))
+    
     return destination_filename
