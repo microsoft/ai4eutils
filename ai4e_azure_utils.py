@@ -10,7 +10,7 @@ from azure.storage.blob._models import BlobPrefix
 #
 # https://github.com/Azure/azure-sdk-for-python/blob/master/sdk/storage/azure-storage-blob/samples/blob_samples_walk_blob_hierarchy.py
 def walk_container(container_client, max_depth=-1, prefix='', 
-                   store_folders=True, store_blobs=True):
+                   store_folders=True, store_blobs=True, debug_max_items=-1):
     """
     Recursively walk folders in the ContainerClient object *container_client*
     """
@@ -23,20 +23,22 @@ def walk_container(container_client, max_depth=-1, prefix='',
             folders = []
         if blobs is None:
             blobs = []
-            
+                    
         nonlocal depth
         
         if max_depth > 0 and depth > max_depth:
-            return
+            return folders, blobs
                 
         for item in container_client.walk_blobs(name_starts_with=prefix):
             short_name = item.name[len(prefix):]
             if isinstance(item, BlobPrefix):
-                # print('F: ' + prefix + short_name)
+                print('F: ' + prefix + short_name)
                 if store_folders:
                     folders.append(prefix + short_name)
                 depth += 1
                 walk_blob_hierarchy(prefix=item.name,folders=folders,blobs=blobs)
+                if (debug_max_items > 0) and (len(folders)+len(blobs) > debug_max_items):
+                    return folders, blobs        
                 depth -= 1
             else:
                 if store_blobs:
