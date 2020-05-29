@@ -32,7 +32,7 @@ def walk_container(container_client, max_depth=-1, prefix='',
         for item in container_client.walk_blobs(name_starts_with=prefix):
             short_name = item.name[len(prefix):]
             if isinstance(item, BlobPrefix):
-                print('F: ' + prefix + short_name)
+                # print('F: ' + prefix + short_name)
                 if store_folders:
                     folders.append(prefix + short_name)
                 depth += 1
