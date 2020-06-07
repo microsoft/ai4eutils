@@ -130,7 +130,8 @@ def copy_file_to_blob(account_name,sas_token,container_name,
         container_client.upload_blob(remote_path, data)
     
     
-def enumerate_blobs(account_name,sas_token,container_name,rmatch=None,prefix=None):
+def enumerate_blobs(account_name,sas_token,container_name,
+                    rmatch=None,prefix=None,max_blobs=None):
     """
     Enumerates blobs in a container, optionally filtering with a regex
     
@@ -167,14 +168,18 @@ def enumerate_blobs(account_name,sas_token,container_name,rmatch=None,prefix=Non
             print('.',end='')
         if (i_blob % 50000) == 0:
             print('{} blobs enumerated ({} matches)'.format(i_blob,len(matched_blobs)))
-                
+        
+        if (max_blobs is not None) and (i_blob >= max_blobs):
+            print('Terminating enumeration after {} blobs'.format(max_blobs))
+            break
+        
     print('Enumerated {} matching blobs (of {} total) from {}/{}'.format(len(matched_blobs),
           i_blob,account_name,container_name))
 
     return matched_blobs
 
 
-def enumerate_blobs_to_file(output_file,account_name,sas_token,container_name,account_key=None,rmatch=None,prefix=None):
+def enumerate_blobs_to_file(output_file,account_name,sas_token,container_name,account_key=None,rmatch=None,prefix=None,max_blobs=None):
     """
     Enumerates to a .json string if output_file ends in ".json", otherwise enumerates to a 
     newline-delimited list.
@@ -186,7 +191,8 @@ def enumerate_blobs_to_file(output_file,account_name,sas_token,container_name,ac
                                     sas_token=sas_token,
                                     container_name=container_name,
                                     rmatch=rmatch,
-                                    prefix=prefix)
+                                    prefix=prefix,
+                                    max_blobs=max_blobs)
     
     write_list_to_file(output_file,matched_blobs)
     return matched_blobs
