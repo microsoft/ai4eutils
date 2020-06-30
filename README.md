@@ -6,26 +6,29 @@ The general convention in this repo is that users who want to consume these util
 
 # Contents
 
-- `path_utils.py`: Miscellaneous useful utils for path manipulation, things that could *almost* be in os.path, but aren't.
+- [path_utils.py](path_utils.py): Miscellaneous useful utils for path manipulation, things that could *almost* be in os.path, but aren't.
 
-- `matlab_porting_tools.py`: A few ported Matlab functions that makes it easier to port other, larger Matlab functions to Python.
+- [matlab_porting_tools.py](matlab_porting_tools.py): A few ported Matlab functions that makes it easier to port other, larger Matlab functions to Python.
 
-- `write_html_image_list.py`: Given a list of image file names, writes an HTML file that shows all those images, with optional one-line headers above each.
+- [write_html_image_list.py](write_html_image_list.py): Given a list of image file names, writes an HTML file that shows all those images, with optional one-line headers above each.
 
-- `sas_blob_utils.py`: Helper functions for dealing with Shared Access Signatures (SAS) tokens
+- [sas_blob_utils.py](sas_blob_utils.py): Helper functions for dealing with Shared Access Signatures (SAS) tokens
 for Azure Blob Storage.
 
-- `TF_OD_API`: A Dockerfile and a script to prepare a Docker image for use with the [TensorFlow Object Detection API](https://github.com/tensorflow/models/tree/master/research/object_detection).
+- [TF_OD_API](TF_OD_API): A Dockerfile and a script to prepare a Docker image for use with the [TensorFlow Object Detection API](https://github.com/tensorflow/models/tree/master/research/object_detection).
 
-- `gDrive_download.py`: Semi-automatic script for bulk download from shared Google Drives using the gDrive Python SDK.
+- [gDrive_download.py](gDrive_download.py): Semi-automatic script for bulk download from shared Google Drives using the gDrive Python SDK.
 
-- `azure-sdk-calc-storage-size`: Script for recursively computing the size of all blobs and files in an Azure subscription.
+- [azure-sdk-calc-storage-size](azure-sdk-calc-storage-size): Script for recursively computing the size of all blobs and files in an Azure subscription.
 
-- `azure-metrics-calc-storage-size`: Script for computing the total size of all storage accounts in an Azure subscription (using Azure Metrics).
+- [azure-metrics-calc-storage-size](azure-metrics-calc-storage-size): Script for computing the total size of all storage accounts in an Azure subscription (using Azure Metrics).
 
-- `ai4e_azure_utils.py`: Functions for interacting with the Azure Storage SDK
+- [ai4e_azure_utils.py](ai4e_azure_utils.py): Functions for interacting with the Azure Storage SDK
 
-- `ai4e_web_utils.py`: Functions for interacting with http requests
+- [ai4e_web_utils.py](ai4e_web_utils.py): Functions for interacting with http requests
+
+- [geospatial](geospatial): Classes and utility functions for processing geospatial data for machine learning applications
+
 
 # Contributing
 
