@@ -20,6 +20,7 @@
 
 ## TODO
 
--[ ] Add a meta class for segmentation and detection models
--[ ] Add a visualization class for viewing raster labels
+- [ ] Add a meta class for segmentation and detection models
+
+- [ ] Add a visualization class for viewing raster labels
 
