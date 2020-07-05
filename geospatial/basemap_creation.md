@@ -5,7 +5,7 @@ Often our geospatial ML models will operate on a _patch_ level, where a _patch_ 
 
 ## Using gdal2tiles to turn *model predictions* into an interactive map
 
-Assuming that you have a directory of model predictions (values in a GeoTIFF format with an attached color pallete and uint8 data type) in `output_tiles/` that completely tile your area of study, you can use the following steps to create a basemap and view it in a web browser:
+Assuming that you have a directory of model predictions (**values in a GeoTIFF format with an attached color pallete and uint8 data type**) in `output_tiles/` that completely tile your area of study, you can use the following steps to create a basemap and view it in a web browser:
 
 ### Create a VRT out of the preditions
 
