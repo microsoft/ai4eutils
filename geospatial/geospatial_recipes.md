@@ -126,6 +126,14 @@ then
 gdal_translate -co BIGTIFF=YES -co NUM_THREADS=ALL_CPUS -co COMPRESS=LZW -CO PREDICTOR=2 OUTPUT.vrt OUTPUT.tif
 ```
 
+Alternatively, you can use [gdal_merge.py](https://gdal.org/programs/gdal_merge.html).
+
+```
+gdal_merge.py -o OUTPUT.tif path/to/tiffs/*.tif
+```
+
+Note: These different methods have trade-offs. For a discussion about the differences see [this StackOverflow QA](https://gis.stackexchange.com/questions/44717/whats-the-difference-between-gdalwarp-and-gdal-merge-for-mosaicing).
+
 
 ### Make a thumbnail from a raster
 <a name="make-a-thumbnail-from-a-raster"></a>
