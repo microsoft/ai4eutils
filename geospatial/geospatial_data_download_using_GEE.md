@@ -238,4 +238,4 @@ pip install geehydro
 
 #### Example: Downloading Sentinel 2 Data using GEE Python API
 
-In this [Jupyter notebook](https://github.com/microsoft/ai4eutils/blob/master/geospatial/notebooks/GEE_python_api.ipynb) we reproduce the same previously presented example using the GEE python API. A html version is available [here](https://github.com/microsoft/ai4eutils/blob/master/geospatial/notebooks/GEE_python_api.html)
+In this [Jupyter notebook](https://github.com/microsoft/ai4eutils/blob/master/geospatial/notebooks/GEE_python_api.ipynb) we reproduce the same previously presented example using the GEE python API. A html version is available [here](https://htmlpreview.github.io/?https://github.com/microsoft/ai4eutils/blob/master/geospatial/notebooks/GEE_python_api.html)
