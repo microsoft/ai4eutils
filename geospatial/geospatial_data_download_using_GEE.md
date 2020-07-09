@@ -1,6 +1,6 @@
 # Downloading Geospatial Data Using Google Earth Engine
 
-While working on geospatial applications we often need to download satellite data. Google Earth Engine (GEE) offers tools to download common geospatial data including LandSat and Sentinel imagery among others. Check the data catalog [here.](https://developers.google.com/earth-engine/datasets)
+While working on geospatial applications we often need to download satellite data. Google Earth Engine (GEE) offers tools to download common geospatial data including LandSat and Sentinel imagery among others. Check out the data catalog [here.](https://developers.google.com/earth-engine/datasets)
 
 There are several ways to use GEE. In this document we will discuss the [Javascript-based code editor](https://developers.google.com/earth-engine/playground) and the Python API.
 
@@ -10,19 +10,19 @@ The GEE Javascript code editor is very well documented [here](https://developers
 
 ### Downloading Sentinel Data Using GEE Code Editor
 
-The code editor is available to anyone on [this site](https://code.earthengine.google.com/). If you have not already, you will need to enable access by logging in using a registered Google account. You should see an empty new script on the top-middle part of the screen.
+The code editor is available to anyone, and can be found at [this site](https://code.earthengine.google.com/). If you have not already, you will need to enable access by logging in using a registered Google account. You should see an empty new script on the top-middle part of the screen.
 
 
 
 #### Selecting Area of Interest
 
-With satellite imagery you can investigate any spot on Earth. Select a region in the world you are interested on. Make sure that the projection for th e coordinates is in epsg:4326
+With satellite imagery you can investigate any spot on Earth. Select a region in the world you are interested on. Make sure that the projection for the coordinates is epsg:4326 (i.e. simple lat/lons).
 
 ```
 var geometry = ee.Geometry.Polygon([ [ [ 73.371701190307323441, 16.3614302290214900118745 ], [ 73.369360101473, 16.36413022805 ], [ 73.3724101022093, 16.37065038004363329949862 ], [ 73.375780231141, 16.370000408038201353 ], [ 73.376640119030, 16.36753022902 ],  [ 73.371701190307323441, 16.3614302290214900118745 ] ] ]);
 ```
 
-As an alternative you can copy the geojson feature for the area as follows:
+As an alternative you can paste the GeoJSON feature for the area, and get the geometry as follows:
 
 ```
 var feature = ee.Feature({
@@ -40,7 +40,7 @@ var geometry = feature.geometry();
 
 #### The Sentinel 2 Collection
 
-In GEE each collection has its own id and you can find them in the [GEE catalog](https://developers.google.com/earth-engine/datasets). The snippet id for the LSentinel-2 MSI: MultiSpectral Instrument, Level-2A product is "COPERNICUS/S2_SR" as described [here](https://developers.google.com/earth-engine/datasets/catalog/COPERNICUS_S2_SR). 
+In GEE each collection has its own id and you can find them in the [GEE catalog](https://developers.google.com/earth-engine/datasets). The snippet id for the Sentinel-2 MSI: MultiSpectral Instrument, Level-2A product is "COPERNICUS/S2_SR" as described [here](https://developers.google.com/earth-engine/datasets/catalog/COPERNICUS_S2_SR). 
 
 You can have access to the Sentinel 2 collection with the following code:
 
@@ -100,7 +100,7 @@ function maskS2clouds(image) {
 var data = sentinel2_collection.map(maskS2clouds);
 ```
 ##### Filtering by Max Percentage of Cloud
-The "ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', use_scenes_with_max_cloud_percentage_of)" method allows to filter by cloud percentage.
+The `ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', use_scenes_with_max_cloud_percentage_of)` method allows to filter by cloud percentage.
 
 ```
 var use_scenes_with_max_cloud_percentage_of = 3;
@@ -115,8 +115,9 @@ Filters can be combined. Let's do an example:
 
 ```
 var sentinel2_median_image = ee.ImageCollection('COPERNICUS/S2_SR')
-                  .filterDate(startDate, endDate)      .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', use_scenes_with_max_cloud_percentage_of))
-                 .filter(ee.Filter.bounds(geometry))
+                  .filterDate(startDate, endDate)
+                  .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', use_scenes_with_max_cloud_percentage_of))
+                  .filter(ee.Filter.bounds(geometry))
                   .map(maskS2clouds)
                   .median();
 ```
@@ -141,7 +142,7 @@ You can export images, map tiles, tables and video from Earth Engine. The export
 
 ```
 Export.image.toDrive({
-    image: sentinel2_median_image.select('B.+'),
+    image: sentinel2_median_image.select('B.+'), # we just want the imagery bands, i.e. bands with names that start with "B"
     scale: 10,
     region: geometry
 });
@@ -215,7 +216,7 @@ if(doExport){
 
 GEE also offers a python API to download geospatial data.
 
-Note: Some of the steps on this document are borrowed from [here](https://towardsdatascience.com/a-quick-introduction-to-google-earth-engine-c6a608c5febe)
+Note: Some of the steps on this document are borrowed from [here](https://towardsdatascience.com/a-quick-introduction-to-google-earth-engine-c6a608c5febe).
 
 ### Downloading Sentinel Data Using Python API
 
