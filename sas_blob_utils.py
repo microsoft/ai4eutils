@@ -31,7 +31,7 @@ from azure.core.exceptions import ResourceNotFoundError
 
 
 class SasBlob:
-    """SAS URI: https://<account>.blob.windows.net/<container>?<sas_token>"""
+    """SAS URI: https://<account>.blob.core.windows.net/<container>?<sas_token>"""
     @staticmethod
     def _get_resource_reference(prefix: str) -> str:
         return '{}{}'.format(prefix, str(uuid.uuid4()).replace('-', ''))
@@ -166,7 +166,7 @@ class SasBlob:
 
         account = SasBlob.get_account_from_uri(sas_uri)
         container = SasBlob.get_container_from_uri(sas_uri)
-        container_url = f'https://{account}.blob.windows.net/{container}'
+        container_url = f'https://{account}.blob.core.windows.net/{container}'
         container_client = ContainerClient.from_container_url(
             container_url, credential=SasBlob.get_sas_key_from_uri(sas_uri))
 
@@ -246,7 +246,7 @@ class SasBlob:
         Raises: azure.core.exceptions.ResourceExistsError, if container already
             exists
         """
-        account_url = f'https://{account_name}.blob.windows.net'
+        account_url = f'https://{account_name}.blob.core.windows.net'
         container_client = ContainerClient(account_url=account_url,
                                            container_name=container_name,
                                            credential=account_key)
@@ -312,8 +312,8 @@ class SasBlob:
         container_name = SasBlob.get_container_from_uri(container_sas_uri)
         sas_token = SasBlob.get_sas_key_from_uri(container_sas_uri)
 
-        account_url = f'https://{account_name}.blob.windows.net'
+        account_url = f'https://{account_name}.blob.core.windows.net'
         blob_uri = f'{account_url}/{container_name}/{blob_name}'
         if sas_token is not None:
-            blob_uri += '?{sas_token}'
+            blob_uri += f'?{sas_token}'
         return blob_uri
