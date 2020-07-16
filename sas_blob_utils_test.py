@@ -21,7 +21,8 @@ changed by the parameters --blobHost 1.2.3.4 --blobPort 5678.
     mkdir $HOME/tmp/azurite
     azurite-blob -l $HOME/tmp/azurite
 
-4) Now we can run this unit test:
+4) In a separate terminal, activate a virtual environment with the Azure Storage
+Python SDK v12, then run this unit test:
     python test_sas_blob_utils.py -v
 
 Azurite by default supports the following storage account:
