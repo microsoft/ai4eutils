@@ -251,7 +251,7 @@ class RasterLabelVisualizer(object):
 
     @staticmethod
     def visualize_matrix(matrix: np.ndarray) -> Image.Image:
-        """ Shows a 2D matrix of RGB or greyscale values as a PIL Image.
+        """Shows a 2D matrix of RGB or greyscale values as a PIL Image.
 
         Args:
             matrix: a (H, W, 3) or (H, W) numpy array, representing a colored or greyscale image
@@ -264,14 +264,32 @@ class RasterLabelVisualizer(object):
         image = Image.fromarray(matrix)
         return image
 
-    def visualize_softmax_predictions(self, softmax_preds: np.ndarray) -> Image.Image:
-        """Returns a PIL Image visualizing the softmax probabilities using a color matrix to project
-        the probabilities into RGB"""
+    def visualize_softmax_predictions(self, softmax_preds: np.ndarray) -> np.ndarray:
+        """Visualizes softmax probabilities in RGB according to the class label's assigned colors
 
-        assert len(softmax_preds.shape) == 3
-        assert softmax_preds.shape[2] == self.num_classes
+        Args:
+            softmax_preds: numpy array of dimensions (batch_size, num_classes, H, W) or (num_classes, H, W)
 
-        # (H, W, num_classes) @ (num_classes * 3) = (H, W, 3)
-        colored_view = softmax_preds @ self.color_matrix
-        colored_view = RasterLabelVisualizer.visualize_matrix(colored_view)
+        Returns:
+            numpy array of size ((batch_size), H, W, 3). You may need to roll the last axis to in-front before
+            writing to TIFF
+
+        Raises:
+            ValueError when the dimension of softmax_preds is not compliant
+        """
+
+        assert len(softmax_preds.shape) == 4 or len(softmax_preds.shape) == 3
+
+        # row the num_classes dimension to the end
+        if len(softmax_preds.shape) == 4:
+            assert softmax_preds.shape[1] == self.num_classes
+            softmax_preds_transposed = np.transpose(softmax_preds, axes=(0, 2, 3, 1))
+        elif len(softmax_preds.shape) == 3:
+            assert softmax_preds.shape[0] == self.num_classes
+            softmax_preds_transposed = np.transpose(softmax_preds, axes=(1, 2, 0))
+        else:
+            raise ValueError('softmax_preds does not have the required length in the dimension of the classes')
+
+        # ((batch_size), H, W, num_classes) @ (num_classes * 3) = ((batch_size), H, W, 3)
+        colored_view = softmax_preds_transposed @ self.color_matrix
         return colored_view
