@@ -33,7 +33,11 @@ from azure.core.exceptions import ResourceNotFoundError
 
 
 class SasBlob:
-    """SAS URI: https://<account>.blob.core.windows.net/<container>?<sas_token>"""
+    """Convenience methods for managing SAS URIs.
+
+    Default Azure Storage SAS URI:
+        https://<account>.blob.core.windows.net/<container>/<blob>?<sas_token>
+    """
     @staticmethod
     def _get_resource_reference(prefix: str) -> str:
         return '{}{}'.format(prefix, str(uuid.uuid4()).replace('-', ''))
@@ -177,21 +181,16 @@ class SasBlob:
 
         Args:
             sas_uri: str, URI to a container or a blob
+                if blob_name is given, sas_uri is treated as a container URI
+                otherwise, sas_uri is treated as a blob URI
             blob_name: optional str, name of blob
                 must be given if sas_uri is a URI to a container
-                overrides blob name in sas_uri if sas_uri is a URI to a blob
 
         Returns: bool, whether the sas_uri given points to an existing blob
         """
         if blob_name is not None:
-            account = SasBlob.get_account_from_uri(sas_uri)
-            container = SasBlob.get_container_from_uri(sas_uri)
-            sas_token = SasBlob.get_sas_key_from_uri(sas_uri)
-            container_url = f'https://{account}.blob.core.windows.net/{container}'
-            if sas_token is not None:
-                container_url += f'?{sas_token}'
             sas_uri = SasBlob.generate_blob_sas_uri(
-                container_url, blob_name=blob_name)
+                container_sas_uri=sas_uri, blob_name=blob_name)
 
         # until Azure implements a proper BlobClient.exists() method, we can
         # only use try/except to determine blob existence
@@ -239,10 +238,10 @@ class SasBlob:
 
         list_blobs = []
         with SasBlob.get_client_from_uri(sas_uri) as container_client:
-            generator = container_client.list_blobs(name_starts_with=blob_prefix)
+            generator = container_client.list_blobs(name_starts_with=blob_prefix)  # pylint: disable=line-too-long
 
             for blob in tqdm(generator):
-                if blob_suffix is None or blob.name.lower().endswith(blob_suffix):
+                if blob_suffix is None or blob.name.lower().endswith(blob_suffix):  # pylint: disable=line-too-long
                     list_blobs.append(blob.name)
                     if limit is not None and len(list_blobs) == limit:
                         break
