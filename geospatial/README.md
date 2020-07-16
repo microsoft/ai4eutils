@@ -15,7 +15,10 @@
 
 ## Content
 
-- [geospatial_recipes.md](geospatial_recipes.md): a list of recipes for working with geospatial data using the GDAL command line tools
+- [recipes_and_guides](recipes_and_guides): various tutorials on how to do things with GDAL, Google Earth Engine, QGIS, and other Python packages.
+- [visualization](visualization):
+  - RasterLabelVisualizer: a class for visualizing raster mask labels and hardmax or softmax model predictions, instantiated with a user-provided category name and color mapping.
+  - ImageryVisualizer: a collection of static methods for chipping and viewing multi-band spectral imagery data that rasterio can load, such as Landsat 8, Sentine-2, NAIP and SRTM DEM.
 
 
 ## Todo
