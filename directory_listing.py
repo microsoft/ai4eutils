@@ -1,12 +1,12 @@
-# 
+#
 # directory_listing.py
-# 
+#
 # Script for creating HTML directory listings for a local directory and
 # all its subdirectories.  Primarily intended for use on mounted blob
 # containers, so it includes the ability to set the content-type property
 # on the generated html using the blob SDK, so it can be browser-viewable.
 #
-# Also includes a preview of a jpg file (the first in an alphabetical list), 
+# Also includes a preview of a jpg file (the first in an alphabetical list),
 # if present.
 #
 
@@ -17,15 +17,16 @@ import sys
 import argparse
 import re
 
-import azure.storage.blob
+import azure.common
+from azure.storage.blob import BlobServiceClient, ContentSettings
 
 
 #%% Directory enumeration functions
 
 def is_image_file(path):
-    ''' 
+    '''
     Checks whether the provided file path points to an image by checking the
-    file extension. The following file extensions are considered images: jpg, 
+    file extension. The following file extensions are considered images: jpg,
     jpeg.  The check is case-insensitive.
 
     Args:
@@ -40,22 +41,22 @@ def is_image_file(path):
 
 def create_plain_index(root, dirs, files, dirname=None):
     '''
-    Creates the fairly plain HTML folder index 
+    Creates the fairly plain HTML folder index
     including a preview of a single image file, if any is present.
     Returns the HTML source as string.
 
     Args:
-        root: string, path to the root directory, all paths in *dirs* and 
+        root: string, path to the root directory, all paths in *dirs* and
             *files* are relative to this one
         dirs: list of strings, the directories in *root*
         files: list of string, the files in *root*
         dirname: name to print in the html, which may be different than *root*
-    
+
     Returns: HTML source of the directory listing
     '''
-    
+
     if dirname is None:
-        dirname = root or '/'    
+        dirname = root or '/'
 
     html = "<!DOCTYPE html>\n"
     html += "<html lang='en'><head>"
@@ -71,17 +72,17 @@ def create_plain_index(root, dirs, files, dirname=None):
 
     # Insert preview image
     jpg_files = [f for f in files if is_image_file(f)]
-    
+
     if len(jpg_files) > 0:
-        
+
         # This is slow, so defaulting to just the first image:
         #
-        # Use the largest image file as this is most likely to contain 
+        # Use the largest image file as this is most likely to contain
         # useful content.
         #
         # jpg_file_sizes = [os.path.getsize(f) for f in jpg_files]
         # largest_file_index = max(range(len(jpg_files)), key=lambda x: jpg_file_sizes[x])
-        
+
         html += "<a href='{0}'><img style='height:200px; float:right;' src='{0}' alt='Preview image'></a>\n".format(jpg_files[0])
     else:
         html += "\n"
@@ -91,7 +92,7 @@ def create_plain_index(root, dirs, files, dirname=None):
         html += "<p><a href='../index.html'>To parent directory</a></p>\n"
     else:
         html += "\n"
-        # html += "<p>This is the root directoy.</p>\n"        
+        # html += "<p>This is the root directoy.</p>\n"
 
     html += "<h2>Folders</h2>\n"
     if len(dirs) > 0:
@@ -120,9 +121,9 @@ def create_plain_index(root, dirs, files, dirname=None):
     return html
 
 
-def traverse_and_create_index(dir, sas_url=None, overwrite_files=False, 
+def traverse_and_create_index(dir, sas_url=None, overwrite_files=False,
                               template_fun=create_plain_index, basepath=None):
-    ''' 
+    '''
     Recursively traverses the local directory *dir* and generates a index
     file for each folder using *template_fun* to generate the HTML output.
     Excludes hidden files.
@@ -132,8 +133,8 @@ def traverse_and_create_index(dir, sas_url=None, overwrite_files=False,
         template_fun: function taking three arguments (string, list of string, list of string)
             representing the current root, the list of folders, and the list of files.
             Should return the HTML source of the index file
-    
-    Return: 
+
+    Return:
         None
     '''
 
@@ -167,11 +168,13 @@ def traverse_and_create_index(dir, sas_url=None, overwrite_files=False,
             container_name, container_folder = query_string.split("/", 1)
         else:
             container_name, container_folder = query_string, ''
-        
+
         # Prepare the storage access
-        target_settings = azure.storage.blob.ContentSettings(content_type='text/html')
-        block_blob_service = azure.storage.blob.BlockBlobService(account_name, sas_token=sas_token)
-    
+        target_settings = ContentSettings(content_type='text/html')
+        blob_service = BlobServiceClient(
+            account_url=f'{account_name}.blob.core.windows.net',
+            credential=sas_token)
+
     # Traverse directory and all sub directories, excluding hidden files
     for root, dirs, files in os.walk(dir):
 
@@ -185,7 +188,7 @@ def traverse_and_create_index(dir, sas_url=None, overwrite_files=False,
         if not overwrite_files and os.path.isfile(output_file):
             print('Skipping {}, file exists'.format(output_file))
             continue
-        
+
         print("Generating {}".format(output_file))
 
         # Generate HTML with template function
@@ -205,7 +208,8 @@ def traverse_and_create_index(dir, sas_url=None, overwrite_files=False,
             else:
                 output_blob_path = output_file[len(dir) + 1:]
             try:
-                block_blob_service.set_blob_properties(container_name, output_blob_path, content_settings=target_settings)
+                blob_client = blob_service.get_blob_client(container_name, output_blob_path)
+                blob_client.set_http_headers(content_settings=target_settings)
             except azure.common.AzureMissingResourceHttpError:
                 print('ERROR: It seems the SAS URL is incorrect or does not allow setting properties.')
                 return
@@ -237,6 +241,3 @@ if __name__ == '__main__':
         "match the format https://accname.blob.core.windows.net/bname/path/to/folder?..."
 
     traverse_and_create_index(args.directory, overwrite_files=args.enable_overwrite, sas_url=args.sas_url, basepath=args.basepath)
-    
-    
-    
