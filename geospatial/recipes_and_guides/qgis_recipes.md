@@ -1,4 +1,4 @@
-# QGIS reciples
+# QGIS recipes
 
 Useful instructions for doing various operations in QGIS collected into one place.
 
