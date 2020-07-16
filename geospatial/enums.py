@@ -10,4 +10,4 @@ class ExperimentConfigMode(Enum):
     PREPROCESSING = 1
     TRAINING = 2
     EVALUATION = 3  # different from SCORING as it usually only involves labeled tiles in the validation set
-    SCORING = 4
+    SCORING = 4  # over a large area and the output should be georeferenced
