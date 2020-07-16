@@ -23,6 +23,7 @@ gdal_translate -of vrt -expand rgba labels.vrt temp.vrt
 
 When you create the VRT in the previous step it will contain a single channel with predicted class values, however we need an RGB(A) version of this to render into a basemap in the next step. This command will create another VRT file called `temp.vrt` that contains 4 bands of RGBA values describing the class color for each pixel, instead of the original single band of class values. This step relies on the color pallete you include when saving the original GeoTIFF patch predictions.
 
+Skip this step if your TIFFs are already RGBA or RGB images.
 
 ### Create a basemap from the RGBA version of your dataset
 
@@ -41,6 +42,25 @@ This step will create a directory `output_tiles_basemap/` that contains a _basem
 - Replace `layers: [osm]` with `layers: [white, lyr]`
 - Rename `leaflet.html` to `index.html`
 
+### Add a legend
+
+Towards the end of the `<script>` section, add these lines and replace `"legend.png"` with the image of your legend.
+
+```javascript
+  // Legend
+  var src = '<img src="legend.png">';
+  var title = L.control({position: 'bottomright'});
+  title.onAdd = function(map) {
+      this._div = L.DomUtil.create('div', 'ctl legend');
+      this.update();
+      return this._div;
+  };
+  title.update = function(props) {
+      this._div.innerHTML = src;
+  };
+  title.addTo(map);
+```
+
 ### Host the directory on a web server
 
 Locally, you can simply open `index.html` (previously `leaflet.html`) in a web browser to see the final map, however to share it with partners it is helpful to host it somewhere.
@@ -51,7 +71,13 @@ sudo apt update
 sudo apt install apache2
 sudo chown -R $USER /var/www/html
 ```
-Now, after ensuring that port 80 is open (e.g. by adding a rule in the Networking tab for the VM on Azure), you should be able to see an example page at `http://<your public ip or domain>/`. If you copy the `leaflet.html` page and basemap directories to `/var/www/html/` then they will be accessible to the world.
+Now, after ensuring that port 80 is open (e.g. by adding a rule in the Networking tab for the VM on Azure Portal), you should be able to see an example page at `http://<your public ip or domain>/`. If you copy the `leaflet.html` page and basemap directories to `/var/www/html/` then they will be accessible to the world.
+
+Alternatively, for a quick but less performant solution, you can use the `http.server` module that comes with Python 3. Navigate to the basemap output folder `output_tiles_basemap` and execute
+```
+python -m http.server 6001
+```
+to start the webserver on port 6001 (you might want to do this in a `tmux` session if you plan to leave it up for a while). The map will be viewable at `http://<your public ip or domain>:6001`. You need to open port 6001 on Azure Portal. 
 
 
 ## Using gdal2tiles to turn *satellite imagery* into an interactive map
