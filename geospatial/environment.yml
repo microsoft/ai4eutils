@@ -1,0 +1,14 @@
+# This environment file is used mostly to record what packages are required to use components in
+# the geospatial directory, as it will likely to be imported in another script and uses that environment.
+
+
+name: ai4e_geospatial
+
+channels:
+  - pytorch
+  - defaults
+
+dependencies:
+  - python>=3.6
+  - numpy>=1.17
+  - matplotlib
