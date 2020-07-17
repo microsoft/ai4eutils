@@ -2,7 +2,16 @@
 
 Useful instructions for doing various operations in QGIS collected into one place.
 
+## Adding a collections of free basemaps as XYZ tile layers
 
+Instructions adapted from [here](https://opengislab.com/blog/2018/4/15/add-basemaps-in-qgis-30).
+
+Steps:
+
+1. Open the Python Console in QGIS by going to the "Plugins" dropdown menu and selecting on "Python Console":
+  ![Screenshot of QGIS's Plugins menu](../figures/QGIS_python_console.png)
+
+2. Copy the script from https://github.com/klakar/QGIS_resources/blob/master/collections/Geosupportsystem/python/qgis_basemaps.py into the Python Console and run it. This will populate the "XYZ Tiles" section in the Browser with a variety of basemaps that you can add to your project.
 
 ## Adding a Bing Maps product as an XYZ tile layer
 
