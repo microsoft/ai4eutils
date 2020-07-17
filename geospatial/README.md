@@ -16,6 +16,10 @@
 ## Content
 
 - [recipes_and_guides](recipes_and_guides): various tutorials on how to do things with GDAL, Google Earth Engine, QGIS, and other Python packages.
+  - [Creating basemaps from imagery or predictions](recipes_and_guides/basemap_creation.md)
+  - [Downloading data from Google Earth Engine](recipes_and_guides/geospatial_data_download_using_GEE.md)
+  - [Collection of GDAL command line recipes](recipes_and_guides/geospatial_recipes.md)
+  - [Collection of QGIS tips and tricks](recipes_and_guides/qgis_recipes.md)
 - [visualization](visualization):
   - RasterLabelVisualizer: a class for visualizing raster mask labels and hardmax or softmax model predictions, instantiated with a user-provided category name and color mapping.
   - ImageryVisualizer: a collection of static methods for chipping and viewing multi-band spectral imagery data that rasterio can load, such as Landsat 8, Sentine-2, NAIP and SRTM DEM.
@@ -30,7 +34,7 @@
 
 ## Satellite data terminology
 
-Here we define various terms we use internally to describe satellite data.
+Here we define various terms we use internally to describe satellite data. Throughout, we use the term _imagery_ to mean both multispectral satellite/aerial imagery, and other types of raster based data sources (e.g. digital elevation maps, synthetic apeture radar data, gridded weather data, etc.) that may be consumed by a model or used as labels.
 
 ### Scenes
 
@@ -45,18 +49,21 @@ Examples:
 
 ### Tiles
 
-Large-ish image patches and label masks that are generated from _scenes_ and vector data sources, and stored as "analysis-ready" data. Labels that come as polygons in the shapefile or geoJSON format are turned into pixel masks at this stage.
+Large-ish image _patches_ and label masks that are generated from _scenes_ and vector data sources, and stored as "analysis-ready" data. Labels that come as polygons in the shapefile or geoJSON format are turned into pixel masks at this stage.
 
 These should be of a size convinient for blobfuse caching and manual inspection in desktop GIS applications. Reasonable sizes are on the order of millions of pixels, e.g. can range from 2000 by 2000 pixels to 20,000 by 20,000 pixels.
 
 ### Chips
 
-Smaller image patches and label masks sized specifically to be consumed by a model during training/evaluation. These can be cut from _tiles_ on-the-fly during training and evaluation, or offline in a _chipping_ step. If the latter, chips are stored in _shards_, which are large serialized numpy arrays of dimension `(num_chips_in_shard, channels, chip_height, chip_width)`.
+Smaller image _patches_ and label masks sized specifically to be consumed by a model during training/evaluation. These can be cut from _tiles_ on-the-fly during training and evaluation, or offline in a _chipping_ step. If the latter, chips are stored in _shards_.
 
+### Shard
+
+A shard is a set of homogenously sized image chips that are stored together on disk - either as a numpy array, TFRecord, pickle file, etc - with dimensions `(num_chips_in_shard, channels, chip_height, chip_width)`.
 
 ### Patch
 
-Any unit of imagery. It can be a tile or a chip or an area that does not conform to the other more precisely defined units.
+Any unit of imagery. It can be a _tile_ or a _chip_ or an area that does not conform to the other more precisely defined units.
 
 
 ### Preprocessing
