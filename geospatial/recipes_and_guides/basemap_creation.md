@@ -2,6 +2,13 @@
 
 Often our geospatial ML models will operate on a _patch_ level, where a _patch_ is a small crop of satellite imagery - 256x256 for example. Patches, however, are not useful for sharing results over large areas, and are not particularly useful to look at for qualitatively evaluating how well a model is performing over large areas. Instead, we would like to have an interactive map that lets us pan/zoom around the area that we are studying and switch between different layers of imagery and predictions. This page documents two way to do this: with the [gdal2tiles script](https://gdal.org/programs/gdal2tiles.html), and with [GeoServer](http://geoserver.org/).
 
+## Installing GDAL
+
+The easiest way I've found to install GDAL is through anaconda. Here we create a new environment with GDAL version greater than 2.3 (this is important as 2.3 introduced multi-processing support for `gdal2tiles.py`) for running the examples on this page:
+```
+conda create --name gdal python "gdal>=2.3" 
+conda activate gdal
+```
 
 ## Using gdal2tiles to turn *model predictions* into an interactive map
 
@@ -28,8 +35,10 @@ Skip this step if your TIFFs are already RGBA or RGB images.
 ### Create a basemap from the RGBA version of your dataset
 
 ```
-gdal2tiles.py -z 8-15 temp.vrt output_tiles_basemap/
+gdal2tiles.py --processes=NB_PROCESSES -z 8-15 temp.vrt output_tiles_basemap/
 ```
+
+Set `NB_PROCESSES` to the number of cores you have on your machine.
 
 Note: This command can take hours depending on the size of your dataset and the zoom levels you choose to generate. Larger areas and higher zoom levels will respectively take quadratically and exponentially longer times to generate. **See the first section of [this page](https://wiki.openstreetmap.org/wiki/Zoom_levels) for a description of how large a pixel is at each zoom level.**
 
