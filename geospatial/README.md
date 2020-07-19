@@ -36,30 +36,30 @@
 
 Here we define various terms we use internally to describe satellite data. Throughout, we use the term _imagery_ to mean both multispectral satellite/aerial imagery, and other types of raster based data sources (e.g. digital elevation maps, synthetic apeture radar data, gridded weather data, etc.) that may be consumed by a model or used as labels.
 
-### Scenes
+### Scene
 
 Source imagery that were sectioned by the data provider to not exceed some maximally convinient size for downloads. We do not modify these; they are stored for archive purposes.
 
 Scenes in this sense does not have to correspond to the original "scenes" that the satellite sensor imaged (e.g. a Landsat scene); they can be cloud-masked and composited and cut along arbitrary boundaries.
 
 Examples:
-- Landsat 8 imagery downloaded over certain extents from Google 
+- Landsat 8 imagery downloaded over certain extents from Google Earth Engine
 - SRTM DEM data over an extent
 - A GeoTIFF of commercial satellite imagery from a partner
 
-### Tiles
+### Tile
 
 Large-ish image _patches_ and label masks that are generated from _scenes_ and vector data sources, and stored as "analysis-ready" data. Labels that come as polygons in the shapefile or geoJSON format are turned into pixel masks at this stage.
 
 These should be of a size convinient for blobfuse caching and manual inspection in desktop GIS applications. Reasonable sizes are on the order of millions of pixels, e.g. can range from 2000 by 2000 pixels to 20,000 by 20,000 pixels.
 
-### Chips
+### Chip
 
 Smaller image _patches_ and label masks sized specifically to be consumed by a model during training/evaluation. These can be cut from _tiles_ on-the-fly during training and evaluation, or offline in a _chipping_ step. If the latter, chips are stored in _shards_.
 
 ### Shard
 
-A shard is a set of homogenously sized image chips that are stored together on disk - either as a numpy array, TFRecord, pickle file, etc - with dimensions `(num_chips_in_shard, channels, chip_height, chip_width)`.
+A shard is a set of homogenously sized image chips that are stored together on disk - as a numpy array, TFRecord, or pickle file, etc - with dimensions `(num_chips_in_shard, channels, chip_height, chip_width)`.
 
 ### Patch
 
