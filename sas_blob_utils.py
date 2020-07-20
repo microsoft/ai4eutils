@@ -235,17 +235,15 @@ def check_blob_existence(sas_uri: str,
 
 def list_blobs_in_container(
         container_uri: str,
-        limit: Optional[int] = None,
         blob_prefix: Optional[str] = None,
         blob_suffix: Optional[Union[str, Tuple[str]]] = None,
-        rsearch: Optional[str] = None
+        rsearch: Optional[str] = None,
+        limit: Optional[int] = None
         ) -> List[str]:
     """Get a sorted list of blob names in this container.
 
     Args:
         container_uri: str, URI to a container, may include SAS token
-        limit: int, maximum # of blob names to list
-            if None, then returns all blob names
         blob_prefix: optional str, returned results will only contain blob names
             to with this prefix
         blob_suffix: optional str or tuple of str, returned results will only
@@ -254,6 +252,8 @@ def list_blobs_in_container(
         rsearch: optional str, returned results will only contain blob names
             that match this Python regex pattern at any point in the blob name.
             Use '^' character to only match from the beginning of the blob name.
+        limit: int, maximum # of blob names to list
+            if None, then returns all blob names
 
     Returns:
         sorted list of blob names, of length limit or shorter.

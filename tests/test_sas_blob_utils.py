@@ -22,12 +22,12 @@ changed by the parameters --blobHost 1.2.3.4 --blobPort 5678.
     azurite-blob -l $HOME/tmp/azurite
 
 4) In a separate terminal, activate a virtual environment with the Azure Storage
-Python SDK v12, then run this unit test:
+Python SDK v12, navigate to the ai4eutils folder, and run:
     # run all tests, -v for verbose output
-    python sas_blob_utils_test.py -v
+    python -m unittest -v tests/test_sas_blob_utils.py
 
     # run a specific test
-    python -m unittest -v sas_blob_utils_test.Tests.test_list_blobs_in_container
+    python -m unittest -v tests.test_sas_blob_utils.Tests.test_build_blob_uri
 
 Azurite by default supports the following storage account:
 - Account name: devstoreaccount1
