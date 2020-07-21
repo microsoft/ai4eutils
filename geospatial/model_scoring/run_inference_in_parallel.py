@@ -17,7 +17,7 @@ from multiprocessing import Process
 
 import numpy as np
 
-GPUS = [0, 1, 2, 3]  # list of IDs of the GPUs that we want to use
+GPUS = [0, 1, 2, 3] # list of IDs of the GPUs that we want to use
 TEST_MODE = True # if False then just print out the commands to be run, if True then run those commands
 MODEL_FN = 'models/xception_patches_7_14_2020.hdf5' # path passed to `--model_fn` in the `inference.py` script
 OUTPUT_DIR = 'tmp/'  # path passed to `--output_dir` in the `inference.py` script
