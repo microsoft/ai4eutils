@@ -65,6 +65,7 @@ def build_azure_storage_uri(
         assert container is not None
         uri = f'{uri}/{blob}'
     if sas_token is not None:
+        assert sas_token[0] != '?'
         uri = f'{uri}?{sas_token}'
     return uri
 

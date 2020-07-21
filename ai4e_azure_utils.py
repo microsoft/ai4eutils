@@ -1,10 +1,7 @@
-#
-# ai4e_azure_utils.py
-#
-# Miscellaneous Azure utilities
-#
+"""
+Miscellaneous Azure Blob Storage utilities
+"""
 import json
-import re
 from typing import Any, Iterable, List, Optional, Sequence, Tuple, Union
 
 from azure.storage.blob._models import BlobPrefix
@@ -13,19 +10,24 @@ from azure.storage.blob import ContainerClient
 import sas_blob_utils
 
 
-# Based on:
-#
-# https://github.com/Azure/azure-sdk-for-python/blob/master/sdk/storage/azure-storage-blob/samples/blob_samples_walk_blob_hierarchy.py
-def walk_container(container_client, max_depth=-1, prefix='',
-                   store_folders=True, store_blobs=True, debug_max_items=-1):
+def walk_container(container_client: ContainerClient,
+                   max_depth: int = -1,
+                   prefix: str = '',
+                   store_folders: bool = True,
+                   store_blobs: bool = True,
+                   debug_max_items: int = -1) -> Tuple[List[str], List[str]]:
     """
-    Recursively walk folders in the ContainerClient object *container_client*
+    Recursively walk folders a Azure Blob Storage container.
+
+    Based on:
+    https://github.com/Azure/azure-sdk-for-python/blob/master/sdk/storage/azure-storage-blob/samples/blob_samples_walk_blob_hierarchy.py
     """
+    depth = 1
 
-    depth =  1
-
-    def walk_blob_hierarchy(prefix=prefix, folders=None, blobs=None):
-
+    def walk_blob_hierarchy(prefix: str,
+                            folders: Optional[List[str]] = None,
+                            blobs: Optional[List[str]] = None
+                            ) -> Tuple[List[str], List[str]]:
         if folders is None:
             folders = []
         if blobs is None:
@@ -33,7 +35,7 @@ def walk_container(container_client, max_depth=-1, prefix='',
 
         nonlocal depth
 
-        if max_depth > 0 and depth > max_depth:
+        if 0 < max_depth < depth:
             return folders, blobs
 
         for item in container_client.walk_blobs(name_starts_with=prefix):
@@ -43,8 +45,9 @@ def walk_container(container_client, max_depth=-1, prefix='',
                 if store_folders:
                     folders.append(prefix + short_name)
                 depth += 1
-                walk_blob_hierarchy(prefix=item.name, folders=folders, blobs=blobs)
-                if (debug_max_items > 0) and (len(folders)+len(blobs) > debug_max_items):
+                walk_blob_hierarchy(item.name, folders=folders, blobs=blobs)
+                if (debug_max_items > 0
+                        and len(folders) + len(blobs) > debug_max_items):
                     return folders, blobs
                 depth -= 1
             else:
@@ -53,9 +56,9 @@ def walk_container(container_client, max_depth=-1, prefix='',
 
         return folders, blobs
 
-    folders, blobs = walk_blob_hierarchy()
+    folders, blobs = walk_blob_hierarchy(prefix=prefix)
 
-    assert(all([s.endswith('/') for s in folders]))
+    assert all(s.endswith('/') for s in folders)
     folders = [s.strip('/') for s in folders]
 
     return folders, blobs
@@ -63,14 +66,12 @@ def walk_container(container_client, max_depth=-1, prefix='',
 
 def list_top_level_blob_folders(container_client: ContainerClient) -> List[str]:
     """
-    List all top-level folders in the ContainerClient object *container_client*
+    List all top-level folders in a container.
     """
     top_level_folders, _ = walk_container(
         container_client, max_depth=1, store_blobs=False)
     return top_level_folders
 
-
-#%% Blob enumeration
 
 def concatenate_json_lists(input_files: Iterable[str],
                            output_file: Optional[str] = None
@@ -116,7 +117,7 @@ def upload_file_to_blob(account_name: str,
                         container_name: str,
                         local_path: str,
                         blob_name: str,
-                        sas_token: Optional[str] = None) -> str:
+                        sas_token: str) -> str:
     """Uploads a local file to Azure Blob Storage and returns the uploaded
     blob URI (without a SAS token)."""
     container_uri = sas_blob_utils.build_azure_storage_uri(
@@ -134,13 +135,30 @@ def enumerate_blobs_to_file(
         blob_prefix: Optional[str] = None,
         blob_suffix: Optional[Union[str, Tuple[str]]] = None,
         rsearch: Optional[str] = None,
-        limit: Optional[str] = None
+        limit: Optional[int] = None
         ) -> List[str]:
-    """
-    Enumerates to a .json string if output_file ends in ".json", otherwise enumerates to a
-    newline-delimited list.
+    """Enumerates blobs in a container, and writes the blob names to an output
+    file.
 
-    See enumerate_blobs for parameter information.
+    Args:
+        output_file: str, path to save list of files in container
+            If ends in '.json', writes a JSON string. Otherwise, writes a
+            newline-delimited list
+        account_name: str, Azure Storage account name
+        container_name: str, Azure Blob Storage container name
+        sas_token: optional str, container SAS token, does not start with '?'
+        blob_prefix: optional str, returned results will only contain blob names
+            to with this prefix
+        blob_suffix: optional str or tuple of str, returned results will only
+            contain blob names with this/these suffix(es). The blob names will
+            be lowercased first before comparing with the suffix(es).
+        rsearch: optional str, returned results will only contain blob names
+            that match this Python regex pattern at any point in the blob name.
+            Use '^' character to only match from the beginning of the blob name.
+        limit: int, maximum # of blob names to list
+            if None, then returns all blob names
+
+    Returns: list of str, sorted blob names, of length limit or shorter.
     """
     container_uri = sas_blob_utils.build_azure_storage_uri(
         account=account_name, container=container_name, sas_token=sas_token)

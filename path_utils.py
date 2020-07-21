@@ -4,9 +4,6 @@ be in os.path, but aren't.
 
 See unit tests in tests/test_path_utils.py.
 """
-
-#%% Constants and imports
-
 from datetime import datetime
 import glob
 import ntpath
@@ -17,7 +14,15 @@ from typing import Container, Iterable, List, Optional, Tuple
 import unicodedata
 
 
-#%% General path functions
+IMG_EXTENSIONS = ('.jpg', '.jpeg', '.gif', '.png')
+
+VALID_FILENAME_CHARS = f"~-_.() {string.ascii_letters}{string.digits}"
+SEPARATOR_CHARS = r":\/"
+VALID_PATH_CHARS = VALID_FILENAME_CHARS + SEPARATOR_CHARS
+CHAR_LIMIT = 255
+
+
+## General path functions
 
 def recursive_file_list(base_dir, convert_slashes=True):
     r"""Enumerate files (not directories) in [base_dir], optionally converting
@@ -150,9 +155,7 @@ def top_level_folder(p: str, windows: Optional[bool] = None) -> str:
     return result
 
 
-#%% Image-related path functions
-
-IMG_EXTENSIONS = ('.jpg', '.jpeg', '.gif', '.png')
+## Image-related path functions
 
 def is_image_file(s: str, img_extensions: Container[str] = IMG_EXTENSIONS
                   ) -> bool:
@@ -181,12 +184,8 @@ def find_images(dirname: str, recursive: bool = False) -> List[str]:
     return find_image_strings(strings)
 
 
-#%% Filename-cleaning functions
+## Filename-cleaning functions
 
-VALID_FILENAME_CHARS = f"~-_.() {string.ascii_letters}{string.digits}"
-SEPARATOR_CHARS = r":\/"
-VALID_PATH_CHARS = VALID_FILENAME_CHARS + SEPARATOR_CHARS
-CHAR_LIMIT = 255
 
 def clean_filename(filename: str, whitelist: str = VALID_FILENAME_CHARS,
                    char_limit: int = CHAR_LIMIT) -> str:
