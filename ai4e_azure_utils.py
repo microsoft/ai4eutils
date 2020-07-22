@@ -1,37 +1,43 @@
-#
-# ai4e_azure_utils.py
-#
-# Miscellaneous Azure utilities
-#
-
+"""
+Miscellaneous Azure Blob Storage utilities
+"""
 import json
-import re
-from azure.storage.blob._models import BlobPrefix
-from azure.storage.blob import BlobServiceClient
+from typing import Any, Iterable, List, Optional, Sequence, Tuple, Union
 
-# Based on:
-#
-# https://github.com/Azure/azure-sdk-for-python/blob/master/sdk/storage/azure-storage-blob/samples/blob_samples_walk_blob_hierarchy.py
-def walk_container(container_client, max_depth=-1, prefix='', 
-                   store_folders=True, store_blobs=True, debug_max_items=-1):
+from azure.storage.blob._models import BlobPrefix
+from azure.storage.blob import ContainerClient
+
+import sas_blob_utils
+
+
+def walk_container(container_client: ContainerClient,
+                   max_depth: int = -1,
+                   prefix: str = '',
+                   store_folders: bool = True,
+                   store_blobs: bool = True,
+                   debug_max_items: int = -1) -> Tuple[List[str], List[str]]:
     """
-    Recursively walk folders in the ContainerClient object *container_client*
+    Recursively walk folders a Azure Blob Storage container.
+
+    Based on:
+    https://github.com/Azure/azure-sdk-for-python/blob/master/sdk/storage/azure-storage-blob/samples/blob_samples_walk_blob_hierarchy.py
     """
-    
-    depth =  1
-    
-    def walk_blob_hierarchy(prefix=prefix, folders=None, blobs=None):
-    
+    depth = 1
+
+    def walk_blob_hierarchy(prefix: str,
+                            folders: Optional[List[str]] = None,
+                            blobs: Optional[List[str]] = None
+                            ) -> Tuple[List[str], List[str]]:
         if folders is None:
             folders = []
         if blobs is None:
             blobs = []
-                    
+
         nonlocal depth
-        
-        if max_depth > 0 and depth > max_depth:
+
+        if 0 < max_depth < depth:
             return folders, blobs
-                
+
         for item in container_client.walk_blobs(name_starts_with=prefix):
             short_name = item.name[len(prefix):]
             if isinstance(item, BlobPrefix):
@@ -39,161 +45,125 @@ def walk_container(container_client, max_depth=-1, prefix='',
                 if store_folders:
                     folders.append(prefix + short_name)
                 depth += 1
-                walk_blob_hierarchy(prefix=item.name,folders=folders,blobs=blobs)
-                if (debug_max_items > 0) and (len(folders)+len(blobs) > debug_max_items):
-                    return folders, blobs        
+                walk_blob_hierarchy(item.name, folders=folders, blobs=blobs)
+                if (debug_max_items > 0
+                        and len(folders) + len(blobs) > debug_max_items):
+                    return folders, blobs
                 depth -= 1
             else:
                 if store_blobs:
                     blobs.append(prefix + short_name)
-                
-        return folders,blobs
-                
-    folders,blobs = walk_blob_hierarchy()
-    
-    assert(all([s.endswith('/') for s in folders]))
+
+        return folders, blobs
+
+    folders, blobs = walk_blob_hierarchy(prefix=prefix)
+
+    assert all(s.endswith('/') for s in folders)
     folders = [s.strip('/') for s in folders]
 
-    return folders,blobs
-    
+    return folders, blobs
 
-def list_top_level_blob_folders(container_client):
+
+def list_top_level_blob_folders(container_client: ContainerClient) -> List[str]:
     """
-    List all top-level folders in the ContainerClient object *container_client*
+    List all top-level folders in a container.
     """
-    top_level_folders,_ = walk_container(container_client,max_depth=1,store_blobs=False)
+    top_level_folders, _ = walk_container(
+        container_client, max_depth=1, store_blobs=False)
     return top_level_folders
 
 
-#%% Blob enumeration
-
-def concatenate_json_string_lists(input_files,output_file=None):
-    """
-    Given several files that contain json-formatted lists of strings (typically filenames),
-    concatenate them into one new file.
+def concatenate_json_lists(input_files: Iterable[str],
+                           output_file: Optional[str] = None
+                           ) -> List[Any]:
+    """Given a list of JSON files that contain lists (typically string
+    filenames), concatenates the lists into a single list and optionally
+    writes out this list to a new output JSON file.
     """
     output_list = []
     for fn in input_files:
-        file_list = json.load(open(fn)) 
+        with open(fn, 'r') as f:
+            file_list = json.load(f)
         output_list.extend(file_list)
     if output_file is not None:
-        s = json.dumps(output_list,indent=1)
-        with open(output_file,'w') as f:
-            f.write(s)
+        with open(output_file, 'w') as f:
+            json.dump(output_list, f, indent=1)
     return output_list
 
-        
-def write_list_to_file(output_file,strings):
+
+def write_list_to_file(output_file: str, strings: Sequence[str]) -> None:
+    """Writes a list of strings to either a JSON file or text file,
+    depending on extension of the given file name.
     """
-    Writes a list of strings to file, either .json or text depending on extension
-    """
-    if output_file.endswith('.json'):
-        s = json.dumps(strings,indent=1)
-        with open(output_file,'w') as f:
-            f.write(s)
-    else:
-        with open(output_file,'w') as f:
-            for fn in strings:
-                f.write(fn + '\n')
-                
-    # print('Finished writing list {}'.format(output_file))
-    
-   
-def read_list_from_file(filename):
-    """
-    Reads a json-formatted list of strings from *filename*
-    """
+    with open(output_file, 'w') as f:
+        if output_file.endswith('.json'):
+            json.dump(strings, f, indent=1)
+        else:
+            f.write('\n'.join(strings))
+
+
+def read_list_from_file(filename: str):
+    """Reads a json-formatted list of strings from a file."""
     assert filename.endswith('.json')
-    file_list = json.load(open(filename))             
-    assert isinstance(file_list,list)
+    with open(filename, 'r') as f:
+        file_list = json.load(f)
+    assert isinstance(file_list, list)
     for s in file_list:
-        assert isinstance(s,str)
+        assert isinstance(s, str)
     return file_list
-    
-
-def account_name_to_url(account_name):
-    storage_account_url_blob = 'https://' + account_name + '.blob.core.windows.net'
-    return storage_account_url_blob
 
 
-def copy_file_to_blob(account_name,sas_token,container_name,
-                      local_path,remote_path):
-    """
-    Copies a local file to blob storage
-    """
-    blob_service_client = BlobServiceClient(account_url=account_name_to_url(account_name), 
-                                            credential=sas_token)
-    
-    container_client = blob_service_client.get_container_client(container_name)
-
+def upload_file_to_blob(account_name: str,
+                        container_name: str,
+                        local_path: str,
+                        blob_name: str,
+                        sas_token: str) -> str:
+    """Uploads a local file to Azure Blob Storage and returns the uploaded
+    blob URI (without a SAS token)."""
+    container_uri = sas_blob_utils.build_azure_storage_uri(
+        account=account_name, container=container_name, sas_token=sas_token)
     with open(local_path, 'rb') as data:
-        container_client.upload_blob(remote_path, data)
-    
-    
-def enumerate_blobs(account_name,sas_token,container_name,
-                    rmatch=None,prefix=None,max_blobs=None):
-    """
-    Enumerates blobs in a container, optionally filtering with a regex
-    
-    Using the prefix parameter is faster than using a regex starting with ^
-    
-    sas_token should start with st=
-    """
-    
-    folder_string = '{}/{}'.format(account_name,container_name)
-    if prefix is not None:
-        folder_string += '/{}'.format(prefix)
-    if rmatch is not None:
-        folder_string += ' (matching {})'.format(rmatch)
-    print('Enumerating blobs from {}'.format(folder_string))
-        
-    blob_service_client = BlobServiceClient(account_url=account_name_to_url(account_name), 
-                                            credential=sas_token)
-    
-    container_client = blob_service_client.get_container_client(container_name)
-    
-    generator = container_client.list_blobs(name_starts_with=prefix)
-    matched_blobs = []
+        return sas_blob_utils.upload_blob(
+            container_uri=container_uri, blob_name=blob_name, data=data)
 
-    i_blob = 0
-    for blob in generator:
-        blob_name = blob.name
-        if rmatch is not None:
-            m = re.match(rmatch,blob_name)
-            if m is None:
-                continue
-        matched_blobs.append(blob.name)
-        i_blob += 1
-        if (i_blob % 1000) == 0:
-            print('.',end='')
-        if (i_blob % 50000) == 0:
-            print('{} blobs enumerated ({} matches)'.format(i_blob,len(matched_blobs)))
-        
-        if (max_blobs is not None) and (i_blob >= max_blobs):
-            print('Terminating enumeration after {} blobs'.format(max_blobs))
-            break
-        
-    print('Enumerated {} matching blobs (of {} total) from {}/{}'.format(len(matched_blobs),
-          i_blob,account_name,container_name))
 
+def enumerate_blobs_to_file(
+        output_file: str,
+        account_name: str,
+        container_name: str,
+        sas_token: Optional[str] = None,
+        blob_prefix: Optional[str] = None,
+        blob_suffix: Optional[Union[str, Tuple[str]]] = None,
+        rsearch: Optional[str] = None,
+        limit: Optional[int] = None
+        ) -> List[str]:
+    """Enumerates blobs in a container, and writes the blob names to an output
+    file.
+
+    Args:
+        output_file: str, path to save list of files in container
+            If ends in '.json', writes a JSON string. Otherwise, writes a
+            newline-delimited list
+        account_name: str, Azure Storage account name
+        container_name: str, Azure Blob Storage container name
+        sas_token: optional str, container SAS token, does not start with '?'
+        blob_prefix: optional str, returned results will only contain blob names
+            to with this prefix
+        blob_suffix: optional str or tuple of str, returned results will only
+            contain blob names with this/these suffix(es). The blob names will
+            be lowercased first before comparing with the suffix(es).
+        rsearch: optional str, returned results will only contain blob names
+            that match this Python regex pattern at any point in the blob name.
+            Use '^' character to only match from the beginning of the blob name.
+        limit: int, maximum # of blob names to list
+            if None, then returns all blob names
+
+    Returns: list of str, sorted blob names, of length limit or shorter.
+    """
+    container_uri = sas_blob_utils.build_azure_storage_uri(
+        account=account_name, container=container_name, sas_token=sas_token)
+    matched_blobs = sas_blob_utils.list_blobs_in_container(
+        container_uri=container_uri, blob_prefix=blob_prefix,
+        blob_suffix=blob_suffix, rsearch=rsearch, limit=limit)
+    write_list_to_file(output_file, matched_blobs)
     return matched_blobs
-
-
-def enumerate_blobs_to_file(output_file,account_name,sas_token,container_name,account_key=None,rmatch=None,prefix=None,max_blobs=None):
-    """
-    Enumerates to a .json string if output_file ends in ".json", otherwise enumerates to a 
-    newline-delimited list.
-    
-    See enumerate_blobs for parameter information.
-    """        
-    
-    matched_blobs = enumerate_blobs(account_name=account_name,
-                                    sas_token=sas_token,
-                                    container_name=container_name,
-                                    rmatch=rmatch,
-                                    prefix=prefix,
-                                    max_blobs=max_blobs)
-    
-    write_list_to_file(output_file,matched_blobs)
-    return matched_blobs
-

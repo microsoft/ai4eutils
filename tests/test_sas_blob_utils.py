@@ -22,19 +22,33 @@ changed by the parameters --blobHost 1.2.3.4 --blobPort 5678.
     azurite-blob -l $HOME/tmp/azurite
 
 4) In a separate terminal, activate a virtual environment with the Azure Storage
-Python SDK v12, then run this unit test:
-    python sas_blob_utils_test.py -v
+Python SDK v12, navigate to the ai4eutils folder, and run:
+    # run all tests, -v for verbose output
+    python -m unittest -v tests/test_sas_blob_utils.py
+
+    # run a specific test
+    python -m unittest -v tests.test_sas_blob_utils.Tests.test_build_blob_uri
 
 Azurite by default supports the following storage account:
 - Account name: devstoreaccount1
 - Account key: Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==  # pylint: disable=line-too-long
 """
-
 import unittest
 
 from azure.core.exceptions import HttpResponseError, ResourceNotFoundError
+from azure.storage.blob import BlobClient, ContainerClient
 
-from sas_blob_utils import BlobClient, ContainerClient, SasBlob
+from sas_blob_utils import (
+    build_blob_uri,
+    check_blob_existence,
+    download_blob_to_stream,
+    generate_writable_container_sas,
+    get_account_from_uri,
+    get_blob_from_uri,
+    get_container_from_uri,
+    get_sas_token_from_uri,
+    list_blobs_in_container,
+    upload_blob)
 
 
 PUBLIC_CONTAINER_URI = 'https://lilablobssc.blob.core.windows.net/nacti-unzipped'  # pylint: disable=line-too-long
@@ -58,7 +72,7 @@ PRIVATE_BLOB_NAME = 'successdir/successblob'
 PRIVATE_BLOB_URI = f'{PRIVATE_CONTAINER_URI}/{PRIVATE_BLOB_NAME}'
 
 
-class TestSasBlobUtils(unittest.TestCase):
+class Tests(unittest.TestCase):
     """Tests for sas_blob_utils.py"""
 
     needs_cleanup = False
@@ -78,7 +92,7 @@ class TestSasBlobUtils(unittest.TestCase):
             #     except ResourceNotFoundError:
             #         pass
 
-            # if SasBlob.check_blob_existence(PRIVATE_BLOB_URI):
+            # if check_blob_existence(PRIVATE_BLOB_URI):
             #     with BlobClient.from_blob_url(
             #             PRIVATE_BLOB_URI,
             #             credential=PRIVATE_ACCOUNT_KEY) as bc:
@@ -86,47 +100,43 @@ class TestSasBlobUtils(unittest.TestCase):
         self.needs_cleanup = False
 
     def test_get_account_from_uri(self):
-        self.assertEqual(
-            SasBlob.get_account_from_uri(PUBLIC_BLOB_URI),
-            'lilablobssc')
+        self.assertEqual(get_account_from_uri(PUBLIC_BLOB_URI), 'lilablobssc')
 
     def test_get_container_from_uri(self):
         self.assertEqual(
-            SasBlob.get_container_from_uri(PUBLIC_BLOB_URI),
+            get_container_from_uri(PUBLIC_BLOB_URI),
             'nacti-unzipped')
 
     def test_get_blob_from_uri(self):
-        self.assertEqual(
-            SasBlob.get_blob_from_uri(PUBLIC_BLOB_URI),
-            PUBLIC_BLOB_NAME)
+        self.assertEqual(get_blob_from_uri(PUBLIC_BLOB_URI), PUBLIC_BLOB_NAME)
         with self.assertRaises(ValueError):
-            SasBlob.get_blob_from_uri(PUBLIC_CONTAINER_URI)
+            get_blob_from_uri(PUBLIC_CONTAINER_URI)
 
-    def test_get_sas_key_from_uri(self):
-        self.assertIsNone(SasBlob.get_sas_key_from_uri(PUBLIC_CONTAINER_URI))
+    def test_get_sas_token_from_uri(self):
+        self.assertIsNone(get_sas_token_from_uri(PUBLIC_CONTAINER_URI))
         self.assertEqual(
-            SasBlob.get_sas_key_from_uri(PUBLIC_CONTAINER_URI_SAS),
+            get_sas_token_from_uri(PUBLIC_CONTAINER_URI_SAS),
             PUBLIC_CONTAINER_SAS)
 
     def test_check_blob_existence(self):
         print('PUBLIC_BLOB_URI')
-        self.assertTrue(SasBlob.check_blob_existence(PUBLIC_BLOB_URI))
+        self.assertTrue(check_blob_existence(PUBLIC_BLOB_URI))
         print('PUBLIC_CONTAINER_URI + PUBLIC_BLOB_NAME')
-        self.assertTrue(SasBlob.check_blob_existence(
+        self.assertTrue(check_blob_existence(
             PUBLIC_CONTAINER_URI, blob_name=PUBLIC_BLOB_NAME))
 
         print('PUBLIC_CONTAINER_URI')
         with self.assertRaises(IndexError):
-            SasBlob.check_blob_existence(PUBLIC_CONTAINER_URI)
+            check_blob_existence(PUBLIC_CONTAINER_URI)
         print('PUBLIC_INVALID_BLOB_URI')
-        self.assertFalse(SasBlob.check_blob_existence(PUBLIC_INVALID_BLOB_URI))
+        self.assertFalse(check_blob_existence(PUBLIC_INVALID_BLOB_URI))
 
         print('PRIVATE_BLOB_URI')
         with self.assertRaises(HttpResponseError):
-            SasBlob.check_blob_existence(PRIVATE_BLOB_URI)
+            check_blob_existence(PRIVATE_BLOB_URI)
 
     def test_list_blobs_in_container(self):
-        blobs_list = SasBlob.list_blobs_in_container(
+        blobs_list = list_blobs_in_container(
             PUBLIC_ZIPPED_CONTAINER_URI, limit=100)
         expected = sorted([
             'wcs_20200403_bboxes.json.zip', 'wcs_camera_traps.json.zip',
@@ -137,12 +147,19 @@ class TestSasBlobUtils(unittest.TestCase):
             'wcs_splits.json'])
         self.assertEqual(blobs_list, expected)
 
+        blobs_list = list_blobs_in_container(
+            PUBLIC_ZIPPED_CONTAINER_URI, rsearch=r'_\d[0-3]\.zip')
+        expected = sorted([
+            'wcs_camera_traps_00.zip', 'wcs_camera_traps_01.zip',
+            'wcs_camera_traps_02.zip', 'wcs_camera_traps_03.zip'])
+        self.assertEqual(blobs_list, expected)
+
     def test_generate_writable_container_sas(self):
         # until the private emulated account is able to work, skip this test
         self.skipTest('skipping private account tests for now')
 
         self.needs_cleanup = True
-        new_sas_uri = SasBlob.generate_writable_container_sas(
+        new_sas_uri = generate_writable_container_sas(
             account_name=PRIVATE_ACCOUNT_NAME,
             account_key=PRIVATE_ACCOUNT_KEY,
             container_name=PRIVATE_CONTAINER_NAME,
@@ -150,7 +167,7 @@ class TestSasBlobUtils(unittest.TestCase):
             account_url=PRIVATE_ACCOUNT_URI)
         self.assertTrue(isinstance(new_sas_uri, str))
         self.assertNotEqual(new_sas_uri, '')
-        self.assertEqual(len(SasBlob.list_blobs_in_container(new_sas_uri)), 0)
+        self.assertEqual(len(list_blobs_in_container(new_sas_uri)), 0)
 
     def test_upload_blob(self):
         self.needs_cleanup = True
@@ -158,16 +175,16 @@ class TestSasBlobUtils(unittest.TestCase):
         # ResourceNotFoundError('The specified resource does not exist.')
         print('PUBLIC_CONTAINER_URI')
         with self.assertRaises(ResourceNotFoundError):
-            SasBlob.upload_blob(PUBLIC_CONTAINER_URI,
-                                blob_name='failblob', data='fail')
+            upload_blob(PUBLIC_CONTAINER_URI,
+                        blob_name='failblob', data='fail')
 
         # uploading to a public container with a read-only SAS token yields
         # HttpResponseError('This request is not authorized to perform this '
         #                   'operation using this permission.')
         print('PUBLIC_CONTAINER_URI_SAS')
         with self.assertRaises(HttpResponseError):
-            SasBlob.upload_blob(PUBLIC_CONTAINER_URI_SAS,
-                                blob_name='failblob', data='fail')
+            upload_blob(PUBLIC_CONTAINER_URI_SAS,
+                        blob_name='failblob', data='fail')
 
         # uploading to a private container without a SAS token yields
         # HttpResponseError('Server failed to authenticate the request. Make '
@@ -175,23 +192,23 @@ class TestSasBlobUtils(unittest.TestCase):
         #                   'formed correctly including the signature.')
         print('PRIVATE_CONTAINER_URI')
         with self.assertRaises(HttpResponseError):
-            SasBlob.upload_blob(PRIVATE_CONTAINER_URI,
-                                blob_name=PRIVATE_BLOB_NAME, data='success')
+            upload_blob(PRIVATE_CONTAINER_URI,
+                        blob_name=PRIVATE_BLOB_NAME, data='success')
 
         # until the private emulated account is able to work, skip this test
-        # private_container_uri_sas = SasBlob.generate_writable_container_sas(
+        # private_container_uri_sas = generate_writable_container_sas(
         #     account_name=PRIVATE_ACCOUNT_NAME,
         #     account_key=PRIVATE_ACCOUNT_KEY,
         #     container_name=PRIVATE_CONTAINER_NAME,
         #     access_duration_hrs=1,
         #     account_url=PRIVATE_ACCOUNT_URI)
-        # blob_url = SasBlob.upload_blob(
+        # blob_url = upload_blob(
         #     private_container_uri_sas,
         #     blob_name=PRIVATE_BLOB_NAME, data='success')
         # self.assertEqual(blob_url, PRIVATE_BLOB_URI)
 
-    def test_get_blob_to_stream(self):
-        output, props = SasBlob.get_blob_to_stream(PUBLIC_BLOB_URI)
+    def test_download_blob_to_stream(self):
+        output, props = download_blob_to_stream(PUBLIC_BLOB_URI)
         x = output.read()
         self.assertEqual(len(x), 376645)
         output.close()
@@ -206,14 +223,14 @@ class TestSasBlobUtils(unittest.TestCase):
         for k, v in expected_properties.items():
             self.assertEqual(props[k], v)
 
-    def test_generate_blob_sas_uri(self):
-        generated = SasBlob.generate_blob_sas_uri(
-            container_sas_uri=PUBLIC_CONTAINER_URI,
+    def test_build_blob_uri(self):
+        generated = build_blob_uri(
+            container_uri=PUBLIC_CONTAINER_URI,
             blob_name=PUBLIC_BLOB_NAME)
         self.assertEqual(generated, PUBLIC_BLOB_URI)
 
-        generated = SasBlob.generate_blob_sas_uri(
-            container_sas_uri=PUBLIC_CONTAINER_URI_SAS,
+        generated = build_blob_uri(
+            container_uri=PUBLIC_CONTAINER_URI_SAS,
             blob_name=PUBLIC_BLOB_NAME)
         self.assertEqual(generated, PUBLIC_BLOB_URI_SAS)
 
