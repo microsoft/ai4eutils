@@ -352,7 +352,7 @@ def upload_blob(container_uri: str, blob_name: str,
         data: str, bytes, or IO stream
             if str, assumes utf-8 encoding
 
-    Returns: str, URI to blob
+    Returns: str, URI to blob, includes SAS token if container_uri has SAS token
     """
     blob_url = build_blob_uri(container_uri, blob_name)
     upload_blob_to_url(blob_url, data=data)

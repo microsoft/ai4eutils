@@ -119,7 +119,7 @@ def upload_file_to_blob(account_name: str,
                         blob_name: str,
                         sas_token: str) -> str:
     """Uploads a local file to Azure Blob Storage and returns the uploaded
-    blob URI (without a SAS token)."""
+    blob URI with SAS token."""
     container_uri = sas_blob_utils.build_azure_storage_uri(
         account=account_name, container=container_name, sas_token=sas_token)
     with open(local_path, 'rb') as data:
