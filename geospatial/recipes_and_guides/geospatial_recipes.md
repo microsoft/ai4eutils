@@ -252,7 +252,6 @@ f.close()
 
 command = [
     "gdal_rasterize",
-    "-overwrite",
     "-ot", "Byte",
     "-burn", "1.0",
     "-of", "GTiff",
