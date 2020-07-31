@@ -19,6 +19,7 @@ This is a list of recipes for working with geospatial data using the GDAL comman
 - [Quantize float32/float64 raster to byte](#quantize-float32-float64-raster-to-byte)
 - [Reproject and crop a large raster to the spatial extent and spatial resolution of a smaller raster](#reproject-and-crop-a-large-raster-to-the-spatial-extent-and-spatial-resolution-of-a-smaller-raster)
 - [Rasterize shapefile to the extent of a raster](#rasterize-shapefile-to-the-exent-of-a-raster)
+- [Convert GeoTIFF to COG](#convert-geotiff-to-cog)
 
 ## Quick links to the various GDAL command line tool's documentation 
 
@@ -264,3 +265,12 @@ command = [
 ]
 subprocess.call(command)
 ```
+
+### Convert GeoTIFF to COG
+<a name="convert-geotiff-to-cog"></a>
+
+```
+gdalwarp -co BIGTIFF=YES -co NUM_THREADS=ALL_CPUS -co COMPRESS=LZW -CO PREDICTOR=2 -of COG INPUT.tif OUTPUT.tif
+```
+
+Note: This requires GDAL version >= 3.1
