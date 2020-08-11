@@ -25,13 +25,6 @@
   - ImageryVisualizer: a collection of static methods for chipping and viewing multi-band spectral imagery data that rasterio can load, such as Landsat 8, Sentine-2, NAIP and SRTM DEM.
 
 
-## Todo
-
-- [ ] Add a meta class for segmentation and detection models
-
-- [x] Add a visualization class for viewing raster labels
-
-
 ## Satellite data terminology
 
 Here we define various terms we use internally to describe satellite data. Throughout, we use the term _imagery_ to mean both multispectral satellite/aerial imagery, and other types of raster based data sources (e.g. digital elevation maps, synthetic apeture radar data, gridded weather data, etc.) that may be consumed by a model or used as labels.
