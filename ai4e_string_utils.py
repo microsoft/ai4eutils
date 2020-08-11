@@ -50,4 +50,4 @@ def human_readable_to_bytes(size):
         except ValueError:
             bytes = 0
             
-    return bytes,size+'B'
+    return bytes
