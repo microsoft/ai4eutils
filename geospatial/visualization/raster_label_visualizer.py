@@ -6,7 +6,7 @@ Class to visualize raster mask labels and hardmax or softmax model predictions, 
 import json
 import os
 from io import BytesIO
-from typing import Union, Tuple
+from typing import Union, Tuple, List
 
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
@@ -128,8 +128,7 @@ class RasterLabelVisualizer(object):
         return color_rgb
 
     def get_tiff_colormap(self) -> dict:
-        """
-        Returns the object to pass to rasterio dataset object's write_colormap() function,
+        """Returns the object to pass to rasterio dataset object's write_colormap() function,
         which is a dict mapping int values to a tuple of (R, G, B)
 
         See https://rasterio.readthedocs.io/en/latest/topics/color.html for writing the TIFF colormap
@@ -139,6 +138,26 @@ class RasterLabelVisualizer(object):
             # uint8 RGB required by TIFF
             colormap[num] = RasterLabelVisualizer.matplotlib_color_to_uint8_rgb(color)
         return colormap
+
+    def get_tool_colormap(self) -> List[dict]:
+        """Returns a list of items specifying the name and color of categories. Example:
+        [
+            {"name": "Water", "color": "#0000FF"},
+            {"name": "Tree Canopy", "color": "#008000"},
+            {"name": "Field", "color": "#80FF80"},
+            {"name": "Built", "color": "#806060"}
+        ]
+        """
+        li = []
+        for num, name in self.num_to_name.items():
+            color = self.num_to_color[num]
+            color_hex = mcolors.to_hex(color)
+            li.append({
+                'name': name,
+                'color': color_hex
+            })
+        return li
+
 
     @staticmethod
     def plot_colortable(name_to_color: dict, title: str, sort_colors: bool = False, emptycols: int = 0) -> plt.Figure:

@@ -12,7 +12,7 @@ conda activate gdal
 
 ## Using gdal2tiles to turn *model predictions* into an interactive map
 
-Assuming that you have a directory of model predictions (**values in a GeoTIFF format with an attached color pallete and uint8 data type**) in `output_tiles/` that completely tile your area of study, you can use the following steps to create a basemap and view it in a web browser:
+Assuming that you have a directory of model predictions (**values in a GeoTIFF format with an attached color palette and uint8 data type**) in `output_tiles/` that completely tile your area of study, you can use the following steps to create a basemap and view it in a web browser:
 
 ### Create a VRT out of the preditions
 
@@ -91,7 +91,41 @@ to start the webserver on port 6001 (you might want to do this in a `tmux` sessi
 
 ## Using gdal2tiles to turn *satellite imagery* into an interactive map
 
-TODO
+Assuming your imagery as a set of .tif files from the data provider or resulting from a preprocessing/tiling step are stored in a directory, you can use the following steps to create a basemap and view it in a web browser:
+
+
+### Create a VRT out of your multiple .tif imagery files
+
+```bash
+gdalbuildvrt imagery.vrt imagery/*.tif
+```
+
+Same as in the above instructions for model predictions, this will create a VRT view of your dataset so we can reference your set of .tif files as one entity. This and the next step should finish quickly.
+
+
+### Create a RGB version of the VRT
+
+```bash
+gdal_translate imagery.vrt imagery_rgb.vrt -of vrt -ot Byte -scale_1 0 3000 -scale_2 0 3000 -scale_3 0 3000 -exponent 0.7 -co PHOTOMETRIC=RGB -b 4 -b 3 -b 2 -colorinterp red,green,blue 
+```
+
+In this example, we extract the RGB bands of some Landsat 8 scene where band 4 is the red band, band 3 the green band and band 2 the blue band, specified with the `-b` arguments. 
+
+Note that we apply a min/max scaling (`-scale_[band]`) to each band (although here they are the same so no need to specify separately) and a non-linear scaling with a power function (`-exponent`, values greater than 1 will make image look darker; smaller than 1 will make image look brighter). Values in this example are chosen to make Landsat 8 surface reflectance imagery look good. See the documentation on `gdal_translate` [here](https://gdal.org/programs/gdal_translate.html).
+
+
+### Create a basemap from the RGB version of your dataset
+
+```bash
+gdal2tiles.py --processes=NB_PROCESSES -z 8-13 imagery_rgb.vrt imagery_basemap/
+```
+
+Set `NB_PROCESSES` to the number of cores you have on your machine.
+
+See the corresponding section above for model predictions to understand this step and how to view the resulting basemap.
+
+The path to the directory `imagery_basemap` can be given to a tile map service to display your imagery.
+
 
 ## Using GeoServer
 
