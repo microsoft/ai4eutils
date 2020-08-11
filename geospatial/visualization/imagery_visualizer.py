@@ -85,10 +85,10 @@ class ImageryVisualizer(object):
         return im, buf
 
     @staticmethod
-    def _norm_band(bands: np.ndarray,
-                   band_min: Numeric = 0,
-                   band_max: Numeric = 7000,
-                   gamma: Numeric = 1.0) -> np.ndarray:
+    def norm_band(bands: np.ndarray,
+                  band_min: Numeric = 0,
+                  band_max: Numeric = 7000,
+                  gamma: Numeric = 1.0) -> np.ndarray:
         """Clip, normalize by band_min and band_max, and gamma correct a tile. All bands use the
         same band_min, band_max and gamma. If each band should be processed differently, call this function
         with each band and its normalization parameters, and stack afterwards.
@@ -182,11 +182,12 @@ class ImageryVisualizer(object):
                 `return_array` is False.
                 None if do not resize, otherwise a (w, h) tuple in pixel unit.
                 Default is (256, 256). (500, 500) looks better in notebooks
-            return_array: True will cause this function to return a numpy array of dtype float32;
+            return_array: True will cause this function to return a numpy array, with dtype the same as
+                the original data;
                 False (default) to get a PIL Image object (values scaled to be uint8 values)
 
         Returns:
-            a PIL Image object, resized to `size`, or the (not resized, float32) numpy array
+            a PIL Image object, resized to `size`, or the (not resized, original data type) numpy array
             if `return_array` is true. The dims start with height and width, optionally
             with the channel dim at the end if greater than 1.
 
@@ -204,9 +205,9 @@ class ImageryVisualizer(object):
             window = rasterio.windows.Window(window[0], window[1], window[2], window[3])
 
         # read as (bands, rows, columns) or (c, h, w)
-        bands = tile_reader.read(bands, window=window, boundless=True, fill_value=0)  # dtype is float32
+        bands = tile_reader.read(bands, window=window, boundless=True, fill_value=0)
 
-        bands = ImageryVisualizer._norm_band(bands, band_min=band_min, band_max=band_max, gamma=gamma)
+        bands = ImageryVisualizer.norm_band(bands, band_min=band_min, band_max=band_max, gamma=gamma)
 
         # need to rearrange to (h, w, channel/bands)
         bands = np.transpose(bands, axes=[1, 2, 0])
