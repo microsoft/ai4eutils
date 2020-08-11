@@ -1,7 +1,7 @@
 """
 Visualize multi-band spectral imagery data that rasterio can load.
 
-Mainly catering to Landsat, Sentinel2 and SRTM DEM.
+Mainly catering to Landsat, Sentinel-2 and SRTM DEM.
 """
 
 import math
@@ -55,7 +55,7 @@ class ImageryVisualizer(object):
 
     @staticmethod
     def show_single_band(raster: np.ndarray,
-                         size: Tuple[Numeric, Numeric] = (4, 4),
+                         size_inches: Tuple[Numeric, Numeric] = (4, 4),
                          cmap: Union[mcolors.Colormap, str] = 'gist_yarg',
                          normalizer: mcolors.Normalize = normalized_band_normalizer) -> Tuple[Image.Image, BytesIO]:
         """Visualizes a single band passed in as a numpy array.
@@ -64,6 +64,8 @@ class ImageryVisualizer(object):
             raster: numpy array of imagery values; needs to be 2D after squeezing
             size: matplotlib size in inches (h, w)
             cmap: matplotlib recognized color map str or custom matplotlib colormap object
+            normalizer: a matplotlib.colors.Normalize object. Default is one that has min value at -1
+                and max at 1.
 
         Returns:
             (im, buf) - (PIL image of the matplotlib figure, a BytesIO buf containing the matplotlib Figure
@@ -72,7 +74,7 @@ class ImageryVisualizer(object):
         raster = raster.squeeze()
         assert len(raster.shape) == 2, 'Single band should be a 2D array after squeezing.'
 
-        _ = plt.figure(figsize=size)
+        _ = plt.figure(figsize=size_inches)
         _ = plt.imshow(raster, cmap=cmap, norm=normalizer)
 
         buf = BytesIO()
@@ -83,10 +85,10 @@ class ImageryVisualizer(object):
         return im, buf
 
     @staticmethod
-    def _norm_band(bands: np.ndarray,
-                   band_min: Numeric = 0,
-                   band_max: Numeric = 7000,
-                   gamma: Numeric = 1.0) -> np.ndarray:
+    def norm_band(bands: np.ndarray,
+                  band_min: Numeric = 0,
+                  band_max: Numeric = 7000,
+                  gamma: Numeric = 1.0) -> np.ndarray:
         """Clip, normalize by band_min and band_max, and gamma correct a tile. All bands use the
         same band_min, band_max and gamma. If each band should be processed differently, call this function
         with each band and its normalization parameters, and stack afterwards.
@@ -111,7 +113,7 @@ class ImageryVisualizer(object):
         return bands
 
     @staticmethod
-    def show_landsat8_ndvi(tile_reader: rasterio.DatasetReader,
+    def get_landsat8_ndvi(tile_reader: rasterio.DatasetReader,
                            window: Union[rasterio.windows.Window, Tuple] = None) -> np.ndarray:
         """Computes the NDVI (Normalized Difference Vegetation Index) over a tile or a section
         on the tile specified by the window, for Landsat 8 tiles.
@@ -180,11 +182,12 @@ class ImageryVisualizer(object):
                 `return_array` is False.
                 None if do not resize, otherwise a (w, h) tuple in pixel unit.
                 Default is (256, 256). (500, 500) looks better in notebooks
-            return_array: True will cause this function to return a numpy array of dtype float32;
+            return_array: True will cause this function to return a numpy array, with dtype the same as
+                the original data;
                 False (default) to get a PIL Image object (values scaled to be uint8 values)
 
         Returns:
-            a PIL Image object, resized to `size`, or the (not resized, float32) numpy array
+            a PIL Image object, resized to `size`, or the (not resized, original data type) numpy array
             if `return_array` is true. The dims start with height and width, optionally
             with the channel dim at the end if greater than 1.
 
@@ -202,9 +205,9 @@ class ImageryVisualizer(object):
             window = rasterio.windows.Window(window[0], window[1], window[2], window[3])
 
         # read as (bands, rows, columns) or (c, h, w)
-        bands = tile_reader.read(bands, window=window, boundless=True, fill_value=0)  # dtype is float32
+        bands = tile_reader.read(bands, window=window, boundless=True, fill_value=0)
 
-        bands = ImageryVisualizer._norm_band(bands, band_min=band_min, band_max=band_max, gamma=gamma)
+        bands = ImageryVisualizer.norm_band(bands, band_min=band_min, band_max=band_max, gamma=gamma)
 
         # need to rearrange to (h, w, channel/bands)
         bands = np.transpose(bands, axes=[1, 2, 0])
@@ -228,17 +231,17 @@ class ImageryVisualizer(object):
                             bands: Union[Iterable, int] = landsat8_visible,
                             window: Union[rasterio.windows.Window, Tuple] = None,
                             band_min: Numeric = 0,
-                            band_max: Numeric = 7000,
-                            gamma: Numeric = 1.0,
+                            band_max: Numeric = 3000,
+                            gamma: Numeric = 0.7,
                             size: Tuple[Numeric, Numeric] = (256, 256),
                             return_array: bool = False) -> Union[np.ndarray, Image.Image]:
         """Show a patch of imagery, with default options sensible for Landsat 8 imagery.
 
         For arguments and return value, see show_patch()
         """
-        ImageryVisualizer.show_patch(tile_reader, bands=bands, window=window,
-                                     band_min=band_min, band_max=band_max, gamma=gamma,
-                                     size=size, return_array=return_array)
+        return ImageryVisualizer.show_patch(tile_reader, bands=bands, window=window,
+                                            band_min=band_min, band_max=band_max, gamma=gamma,
+                                            size=size, return_array=return_array)
 
     @staticmethod
     def show_sentinel2_patch(tile_reader: rasterio.DatasetReader,
@@ -253,9 +256,9 @@ class ImageryVisualizer(object):
 
         For arguments and return value, see show_patch()
         """
-        ImageryVisualizer.show_patch(tile_reader, bands=bands, window=window,
-                                     band_min=band_min, band_max=band_max, gamma=gamma,
-                                     size=size, return_array=return_array)
+        return ImageryVisualizer.show_patch(tile_reader, bands=bands, window=window,
+                                            band_min=band_min, band_max=band_max, gamma=gamma,
+                                            size=size, return_array=return_array)
 
     @staticmethod
     def stat_landsat_tile(tile_tif, n_bins=40):

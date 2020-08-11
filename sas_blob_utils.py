@@ -175,6 +175,19 @@ def get_resource_type_from_uri(sas_uri: str) -> Optional[str]:
     return None
 
 
+def get_endpoint_suffix(sas_uri):
+    """Gets the endpoint at which the blob storage account is served.
+    Args:
+        sas_uri: str, Azure blob storage URI with SAS token
+
+    Returns: A string, usually 'core.windows.net' or 'core.chinacloudapi.cn', to use for the
+        `endpoint` argument in various blob storage SDK functions.
+    """
+    url_parts = parse.urlsplit(sas_uri)
+    suffix = url_parts.netloc.split('.blob.')[1].split('/')[0]
+    return suffix
+
+
 def get_permissions_from_uri(sas_uri: str) -> Set[str]:
     """Get the permissions given by this SAS token.
 
