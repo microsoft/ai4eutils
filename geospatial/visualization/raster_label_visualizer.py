@@ -1,12 +1,11 @@
 """
 Class to visualize raster mask labels and hardmax or softmax model predictions, for semantic segmentation tasks.
-
 """
 
 import json
 import os
 from io import BytesIO
-from typing import Union, Tuple, List
+from typing import Union, Tuple
 
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
@@ -32,7 +31,6 @@ class RasterLabelVisualizer(object):
                 as a color; additionally a (R, G, B) tuple or list with uint8 values will also be parsed)
             }
         """
-
         if isinstance(label_map, str):
             assert os.path.exists(label_map)
             with open(label_map) as f:
@@ -139,25 +137,26 @@ class RasterLabelVisualizer(object):
             colormap[num] = RasterLabelVisualizer.matplotlib_color_to_uint8_rgb(color)
         return colormap
 
-    def get_tool_colormap(self) -> List[dict]:
-        """Returns a list of items specifying the name and color of categories. Example:
-        [
+    def get_tool_colormap(self) -> str:
+        """Returns a string that is a JSON of a list of items specifying the name and color
+        of classes. Example:
+        "[
             {"name": "Water", "color": "#0000FF"},
             {"name": "Tree Canopy", "color": "#008000"},
             {"name": "Field", "color": "#80FF80"},
             {"name": "Built", "color": "#806060"}
-        ]
+        ]"
         """
-        li = []
+        classes = []
         for num, name in self.num_to_name.items():
             color = self.num_to_color[num]
             color_hex = mcolors.to_hex(color)
-            li.append({
+            classes.append({
                 'name': name,
                 'color': color_hex
             })
-        return li
-
+        classes = json.dumps(classes, indent=4)
+        return classes
 
     @staticmethod
     def plot_colortable(name_to_color: dict, title: str, sort_colors: bool = False, emptycols: int = 0) -> plt.Figure:
@@ -216,7 +215,7 @@ class RasterLabelVisualizer(object):
 
         return fig
 
-    def plot_color_legend(self, legend_title: str = 'Categories'):
+    def plot_color_legend(self, legend_title: str = 'Categories') -> plt.Figure:
         """Builds a legend of color block, numerical categories and names of the categories.
 
         Returns:
@@ -229,8 +228,8 @@ class RasterLabelVisualizer(object):
         fig = RasterLabelVisualizer.plot_colortable(label_map, legend_title, sort_colors=False, emptycols=3)
         return fig
 
-    def show_label_raster(self, label_raster: Union[Image.Image, np.ndarray], size: Tuple[int, int] = (10, 10)) -> Tuple[
-            Image.Image, BytesIO]:
+    def show_label_raster(self, label_raster: Union[Image.Image, np.ndarray],
+                          size: Tuple[int, int] = (10, 10)) -> Tuple[Image.Image, BytesIO]:
         """Visualizes a label mask or hardmax predictions of a model, according to the category color map
         provided when the class was initialized.
 
