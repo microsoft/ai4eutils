@@ -94,7 +94,8 @@ class ImageryVisualizer(object):
         with each band and its normalization parameters, and stack afterwards.
 
         Args:
-            bands: a numpy array of dims (num_bands, w, h), representing a tile or chip
+            bands: a numpy array, representing a tile or chip. The arrangement of the dimensions don't matter as
+                all operations are element-wise.
             band_min: minimum value the pixels are clipped tp
             band_max: maximum value the pixels are clipped to
             gamma: the gamma value to use in gamma correction. Output is darker for gamma > 1, lighter if gamma < 1.
@@ -113,8 +114,8 @@ class ImageryVisualizer(object):
         return bands
 
     @staticmethod
-    def get_landsat8_ndvi(tile_reader: rasterio.DatasetReader,
-                           window: Union[rasterio.windows.Window, Tuple] = None) -> np.ndarray:
+    def get_landsat8_ndvi(tile: Union[rasterio.DatasetReader, np.ndarray],
+                          window: Union[rasterio.windows.Window, Tuple] = None) -> np.ndarray:
         """Computes the NDVI (Normalized Difference Vegetation Index) over a tile or a section
         on the tile specified by the window, for Landsat 8 tiles.
 
@@ -134,19 +135,41 @@ class ImageryVisualizer(object):
         we can check to see if these out-of-range NDVI values are a small minority in all pixels in the dataset.
 
         Args:
-            tile_reader: a rasterio.io.DatasetReader object returned by rasterio.open()
+            tile:
+                - a rasterio.io.DatasetReader object returned by rasterio.open(), or
+                - a numpy array of dims (height, width, bands)
             window: a tuple of four (col_off x, row_off y, width delta_x, height delta_y)
                 to specify the section of the tile to compute NDVI over, or a rasterio Window object
 
         Returns:
-            2D numpy array of dtype float32 of the NDVI values at each pixel
+            2D numpy array of dtype float32 of the NDVI values at each pixel, of dims (height, width)
             Pixel value is set to 0 if the sum of the red and NIR value there is 0 (empty).
         """
-        if window and isinstance(window, Tuple):
-            window = rasterio.windows.Window(window[0], window[1], window[2], window[3])
+        if isinstance(tile, rasterio.io.DatasetReader):
+            if window and isinstance(window, Tuple):
+                window = rasterio.windows.Window(window[0], window[1], window[2], window[3])
 
-        band_red = tile_reader.read(4, window=window, boundless=True, fill_value=0).squeeze()
-        band_nir = tile_reader.read(5, window=window, boundless=True, fill_value=0).squeeze()
+            band_red = tile.read(4, window=window, boundless=True, fill_value=0).squeeze()
+            band_nir = tile.read(5, window=window, boundless=True, fill_value=0).squeeze()
+
+        elif isinstance(tile, np.ndarray):
+            if window and isinstance(window, rasterio.windows.Window):
+                window = [window.col_off, window.row_off, window.width, window.height]
+            # get the red and NIR bands
+            tile_bands = []
+            for numpy_band_index in (3, 4):
+                if window:
+                    b = tile[
+                                 window[1]: window[1] + window[3],
+                                 window[0]: window[0] + window[2],
+                                 numpy_band_index
+                             ]
+                else:
+                    b = tile[:, :, numpy_band_index]
+
+                tile_bands.append(b)
+            band_red = tile_bands[0]
+            band_nir = tile_bands[1]
 
         sum_red_nir = band_nir + band_red
 
@@ -158,7 +181,7 @@ class ImageryVisualizer(object):
         return ndvi
 
     @staticmethod
-    def show_patch(tile_reader: rasterio.DatasetReader,
+    def show_patch(tile: Union[rasterio.DatasetReader, np.ndarray],
                    bands: Union[Iterable, int],
                    window: Union[rasterio.windows.Window, Tuple] = None,
                    band_min: Numeric = 0,
@@ -169,11 +192,14 @@ class ImageryVisualizer(object):
         """Show a patch of imagery.
 
         Args:
-            tile_reader: a rasterio.io.DatasetReader object returned by rasterio.open()
+            tile:
+                - a rasterio.io.DatasetReader object returned by rasterio.open(), or
+                - a numpy array of dims (height, width, bands)
             bands: list or tuple of ints, or a single int, indicating which band(s) to read. See notes
                 below regarding the order of band numbers to pass in
             window: a tuple of four (col_off x, row_off y, width delta_x, height delta_y)
-                to specify the section of the tile to return, or a rasterio Window object
+                to specify the section of the tile to return,
+                or a rasterio Window object.
             band_min: minimum value the pixels are clipped tp
             band_max: maximum value the pixels are clipped to
             gamma: the gamma value to use in gamma correction. Output is darker for gamma > 1, lighter if gamma < 1.
@@ -187,47 +213,68 @@ class ImageryVisualizer(object):
                 False (default) to get a PIL Image object (values scaled to be uint8 values)
 
         Returns:
-            a PIL Image object, resized to `size`, or the (not resized, original data type) numpy array
-            if `return_array` is true. The dims start with height and width, optionally
-            with the channel dim at the end if greater than 1.
+            - a PIL Image object, resized to `size`
+            - or the (not resized, original data type) numpy array if `return_array` is true.
+            The dims start with (height, width), optionally with the channel dim at the end if greater than 1.
 
             rasterio read() does not pad with 0. The array returned may be smaller than the window specified
 
         Notes:
             - PIL renders the bands in RGB order; keep that in mind when passing in `bands` as a list or tuple
               so that the bands are mapped to Red, Green and Blue in the desired order.
-            - Band index starts with 1
+
+            - Band index starts with 1, for both types of input (rasterio.io.DatasetReader or numpy array).
+            If `tile` is a numpy array, this function will subtract 1 from the band indices before
+            extracting the desired bands.
         """
         if isinstance(bands, int):
-            bands = [bands]  # otherwise rasterio read will return a 2D array instead of 3D
+            bands = [bands]  # otherwise rasterio read and numpy indexing will return a 2D array instead of 3D
 
-        if window and isinstance(window, Tuple):
-            window = rasterio.windows.Window(window[0], window[1], window[2], window[3])
+        for b in bands:
+            assert b > 0, 'bands should be 1-indexed'
 
-        # read as (bands, rows, columns) or (c, h, w)
-        bands = tile_reader.read(bands, window=window, boundless=True, fill_value=0)
+        if isinstance(tile, rasterio.io.DatasetReader):
+            if window and isinstance(window, Tuple):
+                window = rasterio.windows.Window(window[0], window[1], window[2], window[3])
+            # read as (bands, rows, columns) or (channel, height, width)
+            tile_bands = tile.read(bands, window=window, boundless=True, fill_value=0)
+            # rearrange to (height, width, channel/bands)
+            tile_bands = np.transpose(tile_bands, axes=[1, 2, 0])
 
-        bands = ImageryVisualizer.norm_band(bands, band_min=band_min, band_max=band_max, gamma=gamma)
+        elif isinstance(tile, np.ndarray):
+            if window and isinstance(window, rasterio.windows.Window):
+                window = [window.col_off, window.row_off, window.width, window.height]
 
-        # need to rearrange to (h, w, channel/bands)
-        bands = np.transpose(bands, axes=[1, 2, 0])
+            bands = [b - 1 for b in bands]  # rasterio indexes bands from 1, here we subtract 1 for numpy
 
-        bands = bands.squeeze()  # PIL accepts (h, w, 3) or (h, w), not (h, w, 1)
+            if window:
+                tile_bands = tile[
+                                 window[1]: window[1] + window[3],
+                                 window[0]: window[0] + window[2],
+                                 bands
+                             ]
+            else:
+                tile_bands = tile[:, :, bands]
+
+        # tile_bands is of dims (height, width, channel/bands), last dim is 1 if only one band requested
+        tile_bands = ImageryVisualizer.norm_band(tile_bands, band_min=band_min, band_max=band_max, gamma=gamma)
+
+        tile_bands = tile_bands.squeeze()  # PIL accepts (h, w, 3) or (h, w), not (h, w, 1)
 
         if return_array:
-            return bands
+            return tile_bands
 
         # skimage.img_as_ubyte: negative input values will be clipped. Positive values are scaled between 0 and 255
         # fine to use here as we already got rid of negative values by normalizing above
-        bands = img_as_ubyte(bands)
+        tile_bands = img_as_ubyte(tile_bands)
 
-        im = Image.fromarray(bands)
+        im = Image.fromarray(tile_bands)
         if size:
             im = im.resize(size)
         return im
 
     @staticmethod
-    def show_landsat8_patch(tile_reader: rasterio.DatasetReader,
+    def show_landsat8_patch(tile: Union[rasterio.DatasetReader, np.ndarray],
                             bands: Union[Iterable, int] = landsat8_visible,
                             window: Union[rasterio.windows.Window, Tuple] = None,
                             band_min: Numeric = 0,
@@ -239,12 +286,12 @@ class ImageryVisualizer(object):
 
         For arguments and return value, see show_patch()
         """
-        return ImageryVisualizer.show_patch(tile_reader, bands=bands, window=window,
+        return ImageryVisualizer.show_patch(tile, bands=bands, window=window,
                                             band_min=band_min, band_max=band_max, gamma=gamma,
                                             size=size, return_array=return_array)
 
     @staticmethod
-    def show_sentinel2_patch(tile_reader: rasterio.DatasetReader,
+    def show_sentinel2_patch(tile: Union[rasterio.DatasetReader, np.ndarray],
                              bands: Union[Iterable, int] = sentinel2_visible,
                              window: Union[rasterio.windows.Window, Tuple] = None,
                              band_min: Numeric = 0,
@@ -256,7 +303,7 @@ class ImageryVisualizer(object):
 
         For arguments and return value, see show_patch()
         """
-        return ImageryVisualizer.show_patch(tile_reader, bands=bands, window=window,
+        return ImageryVisualizer.show_patch(tile, bands=bands, window=window,
                                             band_min=band_min, band_max=band_max, gamma=gamma,
                                             size=size, return_array=return_array)
 
