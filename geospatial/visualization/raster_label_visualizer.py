@@ -148,7 +148,7 @@ class RasterLabelVisualizer(object):
         ]"
         """
         classes = []
-        for num, name in self.num_to_name.items():
+        for num, name in sorted(self.num_to_name.items(), key=lambda x: int(x[0])):
             color = self.num_to_color[num]
             color_hex = mcolors.to_hex(color)
             classes.append({
