@@ -61,6 +61,7 @@ class StreamingGeospatialDataset(IterableDataset):
         if self.verbose:
             print("Creating a filename stream for worker %d" % (worker_id))
         
+        # This logic splits up the list of filenames into `num_workers` chunks. Each worker will recieve ceil(num_filenames / num_workers) filenames to generate chips from. If the number of workers doesn't divide the number of filenames evenly then the last worker will have fewer filenames.
         N = len(self.fns)
         num_files_per_worker = int(np.ceil(N / num_workers))
         lower_idx = worker_id * num_files_per_worker
