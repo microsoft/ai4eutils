@@ -102,7 +102,7 @@ def write_list_to_file(output_file: str, strings: Sequence[str]) -> None:
             f.write('\n'.join(strings))
 
 
-def read_list_from_file(filename: str):
+def read_list_from_file(filename: str) -> List[str]:
     """Reads a json-formatted list of strings from a file."""
     assert filename.endswith('.json')
     with open(filename, 'r') as f:
