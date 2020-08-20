@@ -47,7 +47,7 @@ def build_azure_storage_uri(
     Args:
         account: str, name of Azure Storage account
         container: optional str, name of Azure Blob Storage container
-        blob: optional str, name of blob
+        blob: optional str, name of blob, not URL-escaped
             if blob is given, must also specify container
         sas_token: optional str, Shared Access Signature (SAS)
             does not start with '?'
@@ -63,6 +63,7 @@ def build_azure_storage_uri(
         uri = f'{uri}/{container}'
     if blob is not None:
         assert container is not None
+        blob = parse.quote(blob)
         uri = f'{uri}/{blob}'
     if sas_token is not None:
         assert sas_token[0] != '?'
@@ -180,8 +181,8 @@ def get_endpoint_suffix(sas_uri):
     Args:
         sas_uri: str, Azure blob storage URI with SAS token
 
-    Returns: A string, usually 'core.windows.net' or 'core.chinacloudapi.cn', to use for the
-        `endpoint` argument in various blob storage SDK functions.
+    Returns: A string, usually 'core.windows.net' or 'core.chinacloudapi.cn', to
+        use for the `endpoint` argument in various blob storage SDK functions.
     """
     url_parts = parse.urlsplit(sas_uri)
     suffix = url_parts.netloc.split('.blob.')[1].split('/')[0]
@@ -227,7 +228,7 @@ def check_blob_existence(sas_uri: str,
         sas_uri: str, URI to a container or a blob
             if blob_name is given, sas_uri is treated as a container URI
             otherwise, sas_uri is treated as a blob URI
-        blob_name: optional str, name of blob
+        blob_name: optional str, name of blob, not URL-escaped
             must be given if sas_uri is a URI to a container
 
     Returns: bool, whether the sas_uri given points to an existing blob
@@ -365,7 +366,7 @@ def upload_blob(container_uri: str, blob_name: str,
         data: str, bytes, or IO stream
             if str, assumes utf-8 encoding
 
-    Returns: str, URI to blob, includes SAS token if container_uri has SAS token
+    Returns: str, URL to blob, includes SAS token if container_uri has SAS token
     """
     blob_url = build_blob_uri(container_uri, blob_name)
     upload_blob_to_url(blob_url, data=data)
@@ -401,15 +402,17 @@ def build_blob_uri(container_uri: str, blob_name: str) -> str:
     """
     Args:
         container_uri: str, URI to blob storage container
-            <account_url>/<container_name>?<sas_token>
-        blob_name: str, name of blob
+            <account_url>/<container>?<sas_token>
+        blob_name: str, name of blob, not URL-escaped
 
-    Returns: str, blob URI
-        <account_url>/<container_name>/<blob_name>?<sas_token>
+    Returns: str, blob URI <account_url>/<container>/<blob_name>?<sas_token>,
+        <blob_name> is URL-escaped
     """
     account_container = container_uri.split('?', maxsplit=1)[0]
     account_url, container_name = account_container.rsplit('/', maxsplit=1)
     sas_token = get_sas_token_from_uri(container_uri)
+
+    blob_name = parse.quote(blob_name)
     blob_uri = f'{account_url}/{container_name}/{blob_name}'
     if sas_token is not None:
         blob_uri += f'?{sas_token}'
