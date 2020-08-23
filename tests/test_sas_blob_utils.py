@@ -213,11 +213,10 @@ class Tests(unittest.TestCase):
         self.assertEqual(len(x), 376645)
         output.close()
 
-        # see https://github.com/Azure/azure-sdk-for-python/issues/12563
         expected_properties = {
             'size': 376645,
-            # 'name': PUBLIC_BLOB_NAME,
-            # 'container': 'nacti-unzipped'
+            'name': PUBLIC_BLOB_NAME,
+            'container': 'nacti-unzipped'
         }
 
         for k, v in expected_properties.items():

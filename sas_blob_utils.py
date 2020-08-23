@@ -384,10 +384,6 @@ def download_blob_to_stream(sas_uri: str) -> Tuple[io.BytesIO, BlobProperties]:
 
     Raises: azure.core.exceptions.ResourceNotFoundError, if sas_uri points
         to a non-existant blob
-
-    NOTE: the returned BlobProperties object may have incorrect values for
-    the blob name and container name. This is a bug which has been reported
-    here: https://github.com/Azure/azure-sdk-for-python/issues/12563
     """
     with BlobClient.from_blob_url(sas_uri) as blob_client:
         output_stream = io.BytesIO()
