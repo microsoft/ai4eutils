@@ -40,7 +40,7 @@ from azure.storage.blob import BlobClient, ContainerClient
 
 from sas_blob_utils import (
     build_blob_uri,
-    check_blob_existence,
+    check_blob_exists,
     download_blob_to_stream,
     generate_writable_container_sas,
     get_account_from_uri,
@@ -92,7 +92,7 @@ class Tests(unittest.TestCase):
             #     except ResourceNotFoundError:
             #         pass
 
-            # if check_blob_existence(PRIVATE_BLOB_URI):
+            # if check_blob_exists(PRIVATE_BLOB_URI):
             #     with BlobClient.from_blob_url(
             #             PRIVATE_BLOB_URI,
             #             credential=PRIVATE_ACCOUNT_KEY) as bc:
@@ -118,22 +118,22 @@ class Tests(unittest.TestCase):
             get_sas_token_from_uri(PUBLIC_CONTAINER_URI_SAS),
             PUBLIC_CONTAINER_SAS)
 
-    def test_check_blob_existence(self):
+    def test_check_blob_exists(self):
         print('PUBLIC_BLOB_URI')
-        self.assertTrue(check_blob_existence(PUBLIC_BLOB_URI))
+        self.assertTrue(check_blob_exists(PUBLIC_BLOB_URI))
         print('PUBLIC_CONTAINER_URI + PUBLIC_BLOB_NAME')
-        self.assertTrue(check_blob_existence(
+        self.assertTrue(check_blob_exists(
             PUBLIC_CONTAINER_URI, blob_name=PUBLIC_BLOB_NAME))
 
         print('PUBLIC_CONTAINER_URI')
         with self.assertRaises(IndexError):
-            check_blob_existence(PUBLIC_CONTAINER_URI)
+            check_blob_exists(PUBLIC_CONTAINER_URI)
         print('PUBLIC_INVALID_BLOB_URI')
-        self.assertFalse(check_blob_existence(PUBLIC_INVALID_BLOB_URI))
+        self.assertFalse(check_blob_exists(PUBLIC_INVALID_BLOB_URI))
 
         print('PRIVATE_BLOB_URI')
         with self.assertRaises(HttpResponseError):
-            check_blob_existence(PRIVATE_BLOB_URI)
+            check_blob_exists(PRIVATE_BLOB_URI)
 
     def test_list_blobs_in_container(self):
         blobs_list = list_blobs_in_container(

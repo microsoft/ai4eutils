@@ -220,8 +220,7 @@ def get_all_query_parts(sas_uri: str) -> Dict[str, Any]:
     return parse.parse_qs(url_parts.query)
 
 
-def check_blob_existence(sas_uri: str,
-                         blob_name: Optional[str] = None) -> bool:
+def check_blob_exists(sas_uri: str, blob_name: Optional[str] = None) -> bool:
     """Checks whether a given URI points to an actual blob.
 
     Args:
