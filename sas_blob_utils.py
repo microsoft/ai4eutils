@@ -8,13 +8,13 @@ This module contains helper functions for dealing with Shared Access Signatures
 The default Azure Storage SAS URI format is:
     https://<account>.blob.core.windows.net/<container>/<blob>?<sas_token>
 
-This module assumes azure-storage-blob version 12.3.
+This module assumes azure-storage-blob version 12.5.
 
 Documentation for Azure Blob Storage:
-https://docs.microsoft.com/en-us/azure/developer/python/sdk/storage/storage-blob-readme
+docs.microsoft.com/en-us/azure/developer/python/sdk/storage/storage-blob-readme
 
 Documentation for SAS:
-https://docs.microsoft.com/en-us/azure/storage/common/storage-sas-overview
+docs.microsoft.com/en-us/azure/storage/common/storage-sas-overview
 """
 from datetime import datetime, timedelta
 import io
@@ -33,7 +33,6 @@ from azure.storage.blob import (
     ContainerSasPermissions,
     generate_container_sas,
     upload_blob_to_url)
-from azure.core.exceptions import ResourceNotFoundError
 
 
 def build_azure_storage_uri(
@@ -236,15 +235,8 @@ def check_blob_exists(sas_uri: str, blob_name: Optional[str] = None) -> bool:
         sas_uri = build_blob_uri(
             container_uri=sas_uri, blob_name=blob_name)
 
-    # until Azure implements a proper BlobClient.exists() method, we can
-    # only use try/except to determine blob existence
-    # see: https://github.com/Azure/azure-sdk-for-python/issues/9507
     with BlobClient.from_blob_url(sas_uri) as blob_client:
-        try:
-            blob_client.get_blob_properties()
-        except ResourceNotFoundError:
-            return False
-        return True
+        return blob_client.exists()
 
 
 def list_blobs_in_container(
