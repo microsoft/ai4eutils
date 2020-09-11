@@ -18,7 +18,8 @@ https://github.com/azure/azurite
 3) Run Azurite. The -l flag sets a temp folder where Azurite can store data to
 disk. By default, Azurite's blob service runs at 127.0.0.1:10000, which can be
 changed by the parameters --blobHost 1.2.3.4 --blobPort 5678.
-    mkdir $HOME/tmp/azurite
+    mkdir -p $HOME/tmp/azurite
+    rm -r $HOME/tmp/azurite/*  # if the folder already existed, clear it
     azurite-blob -l $HOME/tmp/azurite
 
 4) In a separate terminal, activate a virtual environment with the Azure Storage
@@ -82,21 +83,23 @@ class Tests(unittest.TestCase):
             # cleanup: delete the private emulated container
             print('running cleanup')
 
-            # until the private emulated account is able to work, skip cleanup
-            # with ContainerClient.from_container_url(
-            #         PRIVATE_CONTAINER_URI,
-            #         credential=PRIVATE_ACCOUNT_KEY) as cc:
-            #     try:
-            #         cc.get_container_properties()
-            #         cc.delete_container()
-            #     except ResourceNotFoundError:
-            #         pass
+            with BlobClient(account_url=PRIVATE_ACCOUNT_URI,
+                            container_name=PRIVATE_CONTAINER_NAME,
+                            blob_name=PRIVATE_BLOB_NAME,
+                            credential=PRIVATE_ACCOUNT_KEY) as bc:
+                if bc.exists():
+                    print('deleted blob')
+                    bc.delete_blob(delete_snapshots='include')
 
-            # if check_blob_exists(PRIVATE_BLOB_URI):
-            #     with BlobClient.from_blob_url(
-            #             PRIVATE_BLOB_URI,
-            #             credential=PRIVATE_ACCOUNT_KEY) as bc:
-            #         bc.delete_blob(delete_snapshots=True)
+            with ContainerClient.from_container_url(
+                    PRIVATE_CONTAINER_URI,
+                    credential=PRIVATE_ACCOUNT_KEY) as cc:
+                try:
+                    cc.get_container_properties()
+                    cc.delete_container()
+                    print('deleted container')
+                except ResourceNotFoundError:
+                    pass
         self.needs_cleanup = False
 
     def test_get_account_from_uri(self):
@@ -131,10 +134,6 @@ class Tests(unittest.TestCase):
         print('PUBLIC_INVALID_BLOB_URI')
         self.assertFalse(check_blob_exists(PUBLIC_INVALID_BLOB_URI))
 
-        print('PRIVATE_BLOB_URI')
-        with self.assertRaises(HttpResponseError):
-            check_blob_exists(PRIVATE_BLOB_URI)
-
     def test_list_blobs_in_container(self):
         blobs_list = list_blobs_in_container(
             PUBLIC_ZIPPED_CONTAINER_URI, limit=100)
@@ -155,9 +154,6 @@ class Tests(unittest.TestCase):
         self.assertEqual(blobs_list, expected)
 
     def test_generate_writable_container_sas(self):
-        # until the private emulated account is able to work, skip this test
-        self.skipTest('skipping private account tests for now')
-
         self.needs_cleanup = True
         new_sas_uri = generate_writable_container_sas(
             account_name=PRIVATE_ACCOUNT_NAME,
@@ -172,9 +168,9 @@ class Tests(unittest.TestCase):
     def test_upload_blob(self):
         self.needs_cleanup = True
         # uploading to a read-only public container without a SAS token yields
-        # ResourceNotFoundError('The specified resource does not exist.')
+        # HttpResponseError('Server failed to authenticate the request.')
         print('PUBLIC_CONTAINER_URI')
-        with self.assertRaises(ResourceNotFoundError):
+        with self.assertRaises(HttpResponseError):
             upload_blob(PUBLIC_CONTAINER_URI,
                         blob_name='failblob', data='fail')
 
@@ -195,17 +191,25 @@ class Tests(unittest.TestCase):
             upload_blob(PRIVATE_CONTAINER_URI,
                         blob_name=PRIVATE_BLOB_NAME, data='success')
 
-        # until the private emulated account is able to work, skip this test
-        # private_container_uri_sas = generate_writable_container_sas(
-        #     account_name=PRIVATE_ACCOUNT_NAME,
-        #     account_key=PRIVATE_ACCOUNT_KEY,
-        #     container_name=PRIVATE_CONTAINER_NAME,
-        #     access_duration_hrs=1,
-        #     account_url=PRIVATE_ACCOUNT_URI)
-        # blob_url = upload_blob(
-        #     private_container_uri_sas,
-        #     blob_name=PRIVATE_BLOB_NAME, data='success')
-        # self.assertEqual(blob_url, PRIVATE_BLOB_URI)
+        # upload to a private container with a SAS token
+        private_container_uri_sas = generate_writable_container_sas(
+            account_name=PRIVATE_ACCOUNT_NAME,
+            account_key=PRIVATE_ACCOUNT_KEY,
+            container_name=PRIVATE_CONTAINER_NAME,
+            access_duration_hrs=1,
+            account_url=PRIVATE_ACCOUNT_URI)
+        container_sas = get_sas_token_from_uri(private_container_uri_sas)
+        private_blob_uri_sas = f'{PRIVATE_BLOB_URI}?{container_sas}'
+        blob_url = upload_blob(
+            private_container_uri_sas,
+            blob_name=PRIVATE_BLOB_NAME, data='success')
+        self.assertEqual(blob_url, private_blob_uri_sas)
+
+        with BlobClient(account_url=PRIVATE_ACCOUNT_URI,
+                        container_name=PRIVATE_CONTAINER_NAME,
+                        blob_name=PRIVATE_BLOB_NAME,
+                        credential=container_sas) as blob_client:
+            self.assertTrue(blob_client.exists())
 
     def test_download_blob_to_stream(self):
         output, props = download_blob_to_stream(PUBLIC_BLOB_URI)
