@@ -362,7 +362,7 @@ def upload_blob(container_uri: str, blob_name: str,
 
     Returns: str, URL to blob, includes SAS token if container_uri has SAS token
     """
-    account_url, container, sas_token = decompose_container_uri(container_uri)
+    account_url, container, sas_token = split_container_uri(container_uri)
     with BlobClient(account_url=account_url, container_name=container,
                     blob_name=blob_name, credential=sas_token) as blob_client:
         blob_client.upload_blob(data, overwrite=overwrite)
@@ -390,7 +390,7 @@ def download_blob_to_stream(sas_uri: str) -> Tuple[io.BytesIO, BlobProperties]:
     return output_stream, blob_properties
 
 
-def decompose_container_uri(container_uri) -> Tuple[str, str, Optional[str]]:
+def split_container_uri(container_uri: str) -> Tuple[str, str, Optional[str]]:
     """
     Args:
         container_uri: str, URI to blob storage container
@@ -414,7 +414,7 @@ def build_blob_uri(container_uri: str, blob_name: str) -> str:
     Returns: str, blob URI <account_url>/<container>/<blob_name>?<sas_token>,
         <blob_name> is URL-escaped
     """
-    account_url, container, sas_token = decompose_container_uri(container_uri)
+    account_url, container, sas_token = split_container_uri(container_uri)
 
     blob_name = parse.quote(blob_name)
     blob_uri = f'{account_url}/{container}/{blob_name}'
