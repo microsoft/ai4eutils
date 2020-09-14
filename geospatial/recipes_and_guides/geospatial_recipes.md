@@ -4,7 +4,8 @@ This is a list of recipes for working with geospatial data using the GDAL comman
 
 ## Table of Contents
 
-- [Clip shapefile to the extent of a raster](#clip-shapefile-to-the-extent-of-a-raster)  
+- [Clip shapefile to the extent of a raster](#clip-shapefile-to-the-extent-of-a-raster)
+- [Create polygon of the extent of a raster)(#create-polygon-of-the-extent-of-a-raster)
 - [Convert shapefile to geojson](#convert-shapefile-to-geojson)
 - [Reproject a raster](#reproject-a-raster)
 - [Convert a raster into an XYZ basemap](#convert-a-raster-into-an-xyz-basemap)
@@ -42,6 +43,15 @@ This is a list of recipes for working with geospatial data using the GDAL comman
 gdaltindex -t_srs epsg:4326 -f GeoJSON OUTPUT_EXTENT.geojson INPUT_RASTER.tif
 ogr2ogr -f GeoJSON -clipsrc OUTPUT_EXTENT OUTPUT_SHAPES_CLIPPED.geojson INPUT_SHAPES.shp
 ```
+
+
+### Create polygon of the extent of a raster
+<a name="create-polygon-of-the-extent-of-a-raster"></a>
+
+```
+gdaltindex -t_srs epsg:4326 -f GeoJSON OUTPUT_EXTENT.geojson INPUT_RASTER.tif
+```
+
 
 ### Convert shapefile to geojson
 <a name="convert-shapefile-to-geojson"></a>

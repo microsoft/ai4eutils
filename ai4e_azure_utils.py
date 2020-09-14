@@ -1,11 +1,12 @@
 """
 Miscellaneous Azure Blob Storage utilities
+
+Requires azure-storage-blob>=12.4.0
 """
 import json
 from typing import Any, Iterable, List, Optional, Sequence, Tuple, Union
 
-from azure.storage.blob._models import BlobPrefix
-from azure.storage.blob import ContainerClient
+from azure.storage.blob import BlobPrefix, ContainerClient
 
 import sas_blob_utils
 
@@ -104,7 +105,7 @@ def write_list_to_file(output_file: str, strings: Sequence[str]) -> None:
             f.write('\n'.join(strings))
 
 
-def read_list_from_file(filename: str):
+def read_list_from_file(filename: str) -> List[str]:
     """
     Reads a json-formatted list of strings from a file.
     """
