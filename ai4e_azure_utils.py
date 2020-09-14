@@ -76,7 +76,8 @@ def list_top_level_blob_folders(container_client: ContainerClient) -> List[str]:
 def concatenate_json_lists(input_files: Iterable[str],
                            output_file: Optional[str] = None
                            ) -> List[Any]:
-    """Given a list of JSON files that contain lists (typically string
+    """
+    Given a list of JSON files that contain lists (typically string
     filenames), concatenates the lists into a single list and optionally
     writes out this list to a new output JSON file.
     """
@@ -92,7 +93,8 @@ def concatenate_json_lists(input_files: Iterable[str],
 
 
 def write_list_to_file(output_file: str, strings: Sequence[str]) -> None:
-    """Writes a list of strings to either a JSON file or text file,
+    """
+    Writes a list of strings to either a JSON file or text file,
     depending on extension of the given file name.
     """
     with open(output_file, 'w') as f:
@@ -103,7 +105,9 @@ def write_list_to_file(output_file: str, strings: Sequence[str]) -> None:
 
 
 def read_list_from_file(filename: str):
-    """Reads a json-formatted list of strings from a file."""
+    """
+    Reads a json-formatted list of strings from a file.
+    """
     assert filename.endswith('.json')
     with open(filename, 'r') as f:
         file_list = json.load(f)
@@ -118,8 +122,10 @@ def upload_file_to_blob(account_name: str,
                         local_path: str,
                         blob_name: str,
                         sas_token: str) -> str:
-    """Uploads a local file to Azure Blob Storage and returns the uploaded
-    blob URI with SAS token."""
+    """
+    Uploads a local file to Azure Blob Storage and returns the uploaded
+    blob URI with SAS token.
+    """
     container_uri = sas_blob_utils.build_azure_storage_uri(
         account=account_name, container=container_name, sas_token=sas_token)
     with open(local_path, 'rb') as data:
@@ -137,7 +143,8 @@ def enumerate_blobs_to_file(
         rsearch: Optional[str] = None,
         limit: Optional[int] = None
         ) -> List[str]:
-    """Enumerates blobs in a container, and writes the blob names to an output
+    """
+    Enumerates blobs in a container, and writes the blob names to an output
     file.
 
     Args:
