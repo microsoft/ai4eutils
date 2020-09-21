@@ -4,6 +4,9 @@ be in os.path, but aren't.
 
 See unit tests in tests/test_path_utils.py.
 """
+
+#%% Imports and constants
+
 from datetime import datetime
 import glob
 import ntpath
@@ -22,14 +25,14 @@ VALID_PATH_CHARS = VALID_FILENAME_CHARS + SEPARATOR_CHARS
 CHAR_LIMIT = 255
 
 
-## General path functions
+#%% General path functions
 
 def recursive_file_list(base_dir, convert_slashes=True):
-    r"""Enumerate files (not directories) in [base_dir], optionally converting
+    r"""
+    Enumerate files (not directories) in [base_dir], optionally converting
     \ to /
-
-    TODO: needs unit test
     """
+    
     all_files = []
 
     for root, _, filenames in os.walk(base_dir):
@@ -43,7 +46,8 @@ def recursive_file_list(base_dir, convert_slashes=True):
 
 
 def split_path(path: str) -> List[str]:
-    r"""Splits [path] into all its constituent tokens.
+    r"""
+    Splits [path] into all its constituent tokens.
 
     Non-recursive version of:
     http://nicks-liquid-soapbox.blogspot.com/2011/03/splitting-path-to-list-in-python.html
@@ -58,6 +62,7 @@ def split_path(path: str) -> List[str]:
     >>> split_path('/')
     ['/']
     """
+    
     parts = []
     while True:
         # ntpath seems to do the right thing for both Windows and Unix paths
@@ -71,7 +76,8 @@ def split_path(path: str) -> List[str]:
 
 
 def fileparts(path: str) -> Tuple[str, str, str]:
-    r"""Breaks down a path into the directory path, filename, and extension.
+    r"""
+    Breaks down a path into the directory path, filename, and extension.
 
     Note that the '.' lives with the extension, and separators are removed.
 
@@ -88,6 +94,7 @@ def fileparts(path: str) -> Tuple[str, str, str]:
         n: str, filename without extension
         e: str, extension including the '.'
     """
+    
     # ntpath seems to do the right thing for both Windows and Unix paths
     p = ntpath.dirname(path)
     basename = ntpath.basename(path)
@@ -96,7 +103,8 @@ def fileparts(path: str) -> Tuple[str, str, str]:
 
 
 def insert_before_extension(filename: str, s: str = '') -> str:
-    """Insert string [s] before the extension in [filename], separated with '.'.
+    """
+    Insert string [s] before the extension in [filename], separated with '.'.
 
     If [s] is empty, generates a date/timestamp. If [filename] has no extension,
     appends [s].
@@ -109,6 +117,7 @@ def insert_before_extension(filename: str, s: str = '') -> str:
     >>> insert_before_extension('/dir/subdir/file')
     '/dir/subdir/file.2020.07.20.10.54.38'
     """
+    
     assert len(filename) > 0
     if len(s) == 0:
         s = datetime.now().strftime('%Y.%m.%d.%H.%M.%S')
@@ -117,7 +126,8 @@ def insert_before_extension(filename: str, s: str = '') -> str:
 
 
 def top_level_folder(p: str, windows: Optional[bool] = None) -> str:
-    r"""Gets the top-level folder from path [p].
+    r"""
+    Gets the top-level folder from path [p].
 
     This function behaves differently for Windows vs. Unix paths. Set
     windows=True if [p] is a Windows path. Set windows=None (default) to treat
@@ -131,6 +141,7 @@ def top_level_folder(p: str, windows: Optional[bool] = None) -> str:
     >>> top_level_folder('/blah/foo')
     '/blah'
     """
+    
     if p == '':
         return ''
 
@@ -155,7 +166,7 @@ def top_level_folder(p: str, windows: Optional[bool] = None) -> str:
     return result
 
 
-## Image-related path functions
+#%% Image-related path functions
 
 def is_image_file(s: str, img_extensions: Container[str] = IMG_EXTENSIONS
                   ) -> bool:
@@ -184,12 +195,12 @@ def find_images(dirname: str, recursive: bool = False) -> List[str]:
     return find_image_strings(strings)
 
 
-## Filename-cleaning functions
-
+#%% Filename cleaning functions
 
 def clean_filename(filename: str, whitelist: str = VALID_FILENAME_CHARS,
                    char_limit: int = CHAR_LIMIT) -> str:
-    r"""Removes non-ASCII and other invalid filename characters (on any
+    r"""
+    Removes non-ASCII and other invalid filename characters (on any
     reasonable OS) from a filename, then trims to a maximum length.
 
     Does not allow :\/, use clean_path if you want to preserve those.
@@ -197,6 +208,7 @@ def clean_filename(filename: str, whitelist: str = VALID_FILENAME_CHARS,
     Adapted from
     https://gist.github.com/wassname/1393c4a57cfcbf03641dbc31886123b8
     """
+    
     # keep only valid ascii chars
     cleaned_filename = (unicodedata.normalize('NFKD', filename)
                         .encode('ASCII', 'ignore').decode())
@@ -208,17 +220,21 @@ def clean_filename(filename: str, whitelist: str = VALID_FILENAME_CHARS,
 
 def clean_path(pathname: str, whitelist: str = VALID_PATH_CHARS,
                char_limit: int = CHAR_LIMIT) -> str:
-    """Removes non-ASCII and other invalid path characters (on any reasonable
+    """
+    Removes non-ASCII and other invalid path characters (on any reasonable
     OS) from a path, then trims to a maximum length.
     """
+    
     return clean_filename(pathname, whitelist=whitelist, char_limit=char_limit)
 
 
 def flatten_path(pathname: str, separator_chars: str = SEPARATOR_CHARS) -> str:
-    """Removes non-ASCII and other invalid path characters (on any reasonable
+    """
+    Removes non-ASCII and other invalid path characters (on any reasonable
     OS) from a path, then trims to a maximum length. Replaces all valid
     separators with '~'.
     """
+    
     s = clean_path(pathname)
     for c in separator_chars:
         s = s.replace(c, '~')
