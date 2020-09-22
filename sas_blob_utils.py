@@ -16,11 +16,13 @@ docs.microsoft.com/en-us/azure/developer/python/sdk/storage/storage-blob-readme
 Documentation for SAS:
 docs.microsoft.com/en-us/azure/storage/common/storage-sas-overview
 """
+
+#%% Imports
+
 from datetime import datetime, timedelta
 import io
 import re
-from typing import (
-    Any, AnyStr, Dict, IO, Iterable, List, Optional, Set, Tuple, Union)
+from typing import (Any, AnyStr, Dict, IO, Iterable, List, Optional, Set, Tuple, Union)
 from urllib import parse
 import uuid
 
@@ -33,6 +35,8 @@ from azure.storage.blob import (
     ContainerSasPermissions,
     generate_container_sas)
 
+
+#%% URI management
 
 def build_azure_storage_uri(
         account: str,
@@ -47,8 +51,8 @@ def build_azure_storage_uri(
         container: optional str, name of Azure Blob Storage container
         blob: optional str, name of blob, not URL-escaped
             if blob is given, must also specify container
-        sas_token: optional str, Shared Access Signature (SAS)
-            does not start with '?'
+        sas_token: optional str, Shared Access Signature (SAS).  Leading ? 
+            is removed if present.
         account_url_template: str, Python 3 string formatting template,
             contains '{account}' placeholder, defaults to default Azure
             Storage URL format. Set this value if using Azurite Azure Storage
@@ -64,7 +68,8 @@ def build_azure_storage_uri(
         blob = parse.quote(blob)
         uri = f'{uri}/{blob}'
     if sas_token is not None:
-        assert sas_token[0] != '?'
+        if sas_token[0] == '?':
+            sas_token = sas_token[1:]
         uri = f'{uri}?{sas_token}'
     return uri
 
@@ -74,7 +79,9 @@ def _get_resource_reference(prefix: str) -> str:
 
 
 def get_client_from_uri(container_uri: str) -> ContainerClient:
-    """Gets a ContainerClient for the given container URI."""
+    """
+    Gets a ContainerClient for the given container URI.
+    """
     return ContainerClient.from_container_url(container_uri)
 
 
@@ -90,7 +97,8 @@ def get_account_from_uri(sas_uri: str) -> str:
 
 
 def get_container_from_uri(sas_uri: str, unquote: bool = True) -> str:
-    """Gets the container name from a Azure Blob Storage URI.
+    """
+    Gets the container name from a Azure Blob Storage URI.
 
     Assumes that sas_uri points to Azure Blob Storage account hosted at
     a default Azure URI. Does not work for locally-emulated Azure Storage
@@ -116,7 +124,8 @@ def get_container_from_uri(sas_uri: str, unquote: bool = True) -> str:
 
 
 def get_blob_from_uri(sas_uri: str, unquote: bool = True) -> str:
-    """Return the path to the blob from the root container if this sas_uri
+    """
+    Return the path to the blob from the root container if this sas_uri
     is for an individual blob; otherwise returns None.
 
     Args:
@@ -142,7 +151,8 @@ def get_blob_from_uri(sas_uri: str, unquote: bool = True) -> str:
 
 
 def get_sas_token_from_uri(sas_uri: str) -> Optional[str]:
-    """Get the query part of the SAS token that contains permissions, access
+    """
+    Get the query part of the SAS token that contains permissions, access
     times and signature.
 
     Args:
@@ -157,7 +167,8 @@ def get_sas_token_from_uri(sas_uri: str) -> Optional[str]:
 
 
 def get_resource_type_from_uri(sas_uri: str) -> Optional[str]:
-    """Get the resource type pointed to by this SAS token.
+    """
+    Get the resource type pointed to by this SAS token.
 
     Args:
         sas_uri: str, Azure blob storage URI with SAS token
@@ -176,7 +187,8 @@ def get_resource_type_from_uri(sas_uri: str) -> Optional[str]:
 
 
 def get_endpoint_suffix(sas_uri):
-    """Gets the endpoint at which the blob storage account is served.
+    """
+    Gets the endpoint at which the blob storage account is served.
     Args:
         sas_uri: str, Azure blob storage URI with SAS token
 
@@ -189,7 +201,8 @@ def get_endpoint_suffix(sas_uri):
 
 
 def get_permissions_from_uri(sas_uri: str) -> Set[str]:
-    """Get the permissions given by this SAS token.
+    """
+    Get the permissions given by this SAS token.
 
     Args:
         sas_uri: str, Azure blob storage URI with SAS token
@@ -214,13 +227,18 @@ def get_permissions_from_uri(sas_uri: str) -> Set[str]:
 
 
 def get_all_query_parts(sas_uri: str) -> Dict[str, Any]:
-    """Gets the SAS token parameters."""
+    """
+    Gets the SAS token parameters.
+    """
     url_parts = parse.urlsplit(sas_uri)
     return parse.parse_qs(url_parts.query)
 
 
+#%% Blob 
+
 def check_blob_exists(sas_uri: str, blob_name: Optional[str] = None) -> bool:
-    """Checks whether a given URI points to an actual blob.
+    """
+    Checks whether a given URI points to an actual blob.
 
     Assumes that sas_uri points to Azure Blob Storage account hosted at
     a default Azure URI. Does not work for locally-emulated Azure Storage
@@ -252,7 +270,8 @@ def list_blobs_in_container(
         rsearch: Optional[str] = None,
         limit: Optional[int] = None
         ) -> List[str]:
-    """Get a sorted list of blob names in this container.
+    """
+    Get a sorted list of blob names in this container.
 
     Args:
         container_uri: str, URI to a container, may include SAS token
@@ -270,6 +289,7 @@ def list_blobs_in_container(
     Returns:
         sorted list of blob names, of length limit or shorter.
     """
+    
     print('listing blobs...')
     if (get_sas_token_from_uri(container_uri) is not None
             and get_resource_type_from_uri(container_uri) != 'container'):
@@ -314,7 +334,8 @@ def generate_writable_container_sas(account_name: str,
                                     access_duration_hrs: float,
                                     account_url: Optional[str] = None
                                     ) -> str:
-    """Creates a container and returns a SAS URI with read/write/list
+    """
+    Creates a container and returns a SAS URI with read/write/list
     permissions.
 
     Args:
@@ -351,7 +372,8 @@ def generate_writable_container_sas(account_name: str,
 def upload_blob(container_uri: str, blob_name: str,
                 data: Union[Iterable[AnyStr], IO[AnyStr]],
                 overwrite: bool = False) -> str:
-    """Creates a new blob of the given name from an IO stream.
+    """
+    Creates a new blob of the given name from an IO stream.
 
     Args:
         container_uri: str, URI to a container, may include SAS token
@@ -370,7 +392,8 @@ def upload_blob(container_uri: str, blob_name: str,
 
 
 def download_blob_to_stream(sas_uri: str) -> Tuple[io.BytesIO, BlobProperties]:
-    """Downloads a blob to an IO stream.
+    """
+    Downloads a blob to an IO stream.
 
     Args:
         sas_uri: str, URI to a blob
