@@ -122,7 +122,8 @@ def upload_file_to_blob(account_name: str,
                         container_name: str,
                         local_path: str,
                         blob_name: str,
-                        sas_token: str) -> str:
+                        sas_token: str,
+                        overwrite: bool=False) -> str:
     """
     Uploads a local file to Azure Blob Storage and returns the uploaded
     blob URI with SAS token.
@@ -131,7 +132,8 @@ def upload_file_to_blob(account_name: str,
         account=account_name, container=container_name, sas_token=sas_token)
     with open(local_path, 'rb') as data:
         return sas_blob_utils.upload_blob(
-            container_uri=container_uri, blob_name=blob_name, data=data)
+            container_uri=container_uri, blob_name=blob_name, data=data, 
+            overwrite=overwrite)
 
 
 def enumerate_blobs_to_file(
