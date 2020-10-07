@@ -122,7 +122,8 @@ def upload_file_to_blob(account_name: str,
                         container_name: str,
                         local_path: str,
                         blob_name: str,
-                        sas_token: str) -> str:
+                        sas_token: str,
+                        overwrite: bool=False) -> str:
     """
     Uploads a local file to Azure Blob Storage and returns the uploaded
     blob URI with SAS token.
@@ -131,7 +132,8 @@ def upload_file_to_blob(account_name: str,
         account=account_name, container=container_name, sas_token=sas_token)
     with open(local_path, 'rb') as data:
         return sas_blob_utils.upload_blob(
-            container_uri=container_uri, blob_name=blob_name, data=data)
+            container_uri=container_uri, blob_name=blob_name, data=data, 
+            overwrite=overwrite)
 
 
 def enumerate_blobs_to_file(
@@ -154,7 +156,7 @@ def enumerate_blobs_to_file(
             newline-delimited list
         account_name: str, Azure Storage account name
         container_name: str, Azure Blob Storage container name
-        sas_token: optional str, container SAS token, does not start with '?'
+        sas_token: optional str, container SAS token, leading ? will be removed if present.
         blob_prefix: optional str, returned results will only contain blob names
             to with this prefix
         blob_suffix: optional str or tuple of str, returned results will only
@@ -168,6 +170,9 @@ def enumerate_blobs_to_file(
 
     Returns: list of str, sorted blob names, of length limit or shorter.
     """
+    if sas_token is not None and len(sas_token) > 9 and sas_token[0] == '?':
+        sas_token = sas_token[1:]
+        
     container_uri = sas_blob_utils.build_azure_storage_uri(
         account=account_name, container=container_name, sas_token=sas_token)
     matched_blobs = sas_blob_utils.list_blobs_in_container(

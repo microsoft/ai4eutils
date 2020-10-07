@@ -31,7 +31,7 @@ Here we define various terms we use internally to describe satellite data. Throu
 
 ### Scene
 
-Source imagery that were sectioned by the data provider to not exceed some maximally convinient size for downloads. We do not modify these; they are stored for archive purposes.
+Source imagery that were sectioned by the data provider to not exceed some maximally convinient size for downloads. We do not modify these; they are stored for archival purposes.
 
 Scenes in this sense does not have to correspond to the original "scenes" that the satellite sensor imaged (e.g. a Landsat scene); they can be cloud-masked and composited and cut along arbitrary boundaries.
 
@@ -70,7 +70,7 @@ can happen either during the creation of _tiles_ from _scenes_ or the creation o
 
 To ensure reproducibility:
 - A set of _tiles_, and _shards_ of _chips_ if they were made, should be treated as immutable once an experiment has been run using them as input data
-- **Fully documented the procedures** used to create _tiles_ and _chips_ from original _scenes_ (ideally the steps should be entirely programmatic). 
+- **Fully document the procedures** used to create _tiles_ and _chips_ from original _scenes_ (ideally the steps should be entirely programmatic). 
 - The queries and steps used to obtain the _scenes_ from the data provider should also be well-documented and repeatable.
 
 
