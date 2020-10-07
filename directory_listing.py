@@ -9,6 +9,12 @@
 # Also includes a preview of a jpg file (the first in an alphabetical list),
 # if present.
 #
+# Sample invocation:
+#
+# python directory_listing.py /naipout/v002 --basepath /naipout/v002 \
+#   --enable_overwrite \
+#   --sas_url "https://naipblobs.blob.core.windows.net/naip/v002?sv=..."
+#
 
 #%% Imports
 
