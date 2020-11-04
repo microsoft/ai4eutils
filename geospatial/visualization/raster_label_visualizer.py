@@ -258,7 +258,7 @@ class RasterLabelVisualizer(object):
         assert np.max(label_raster) <= self.num_classes, f'Invalid value for class label: {np.max(label_raster)}'
 
         _ = plt.figure(figsize=size)
-        _ = plt.imshow(label_raster, cmap=self.colormap, norm=self.normalizer)
+        _ = plt.imshow(label_raster, cmap=self.colormap, norm=self.normalizer, interpolation='none')
 
         buf = BytesIO()
         plt.savefig(buf, format='png')
