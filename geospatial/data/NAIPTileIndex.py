@@ -16,11 +16,13 @@ class NAIPTileIndex:
         '''Loads the tile index into memory (~400 MB) for use by `self.lookup()`. Downloads the index files from the blob container if they do not exist in the `base_path/` directory.
 
         Args:
-            base_path (str): The path on the local system to look for/store the three files that make up the tile index
+            base_path (str): The path on the local system to look for/store the three files that make up the tile index. This path will be created if it doesn't exist.
             verbose (bool): Whether to be verbose when downloading the tile index files
         '''
 
         # Download the index files if it doens't exist
+        if not os.path.exists(base_path):
+            os.makedirs(base_path)
         for fn in NAIPTileIndex.INDEX_FNS:
             if not os.path.exists(os.path.join(base_path, fn)):
                 download_url(NAIPTileIndex.NAIP_INDEX_BLOB_ROOT + fn, os.path.join(base_path, fn), verbose)
