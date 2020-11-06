@@ -31,9 +31,8 @@ class NAIPTileIndex:
         self.tile_rtree = rtree.index.Index(base_path + "/tile_index")
         self.tile_index = pickle.load(open(base_path  + "/tiles.p", "rb"))
 
-
-    def lookup(self, lat, lon):
-        '''Given a lat/lon coordinate pair, return the list of NAIP tiles that contain that location.
+    def lookup_point(self, lat, lon):
+        '''Given a lat/lon coordinate pair, return the list of NAIP tiles that *contain* that point.
         
         Args:
             lat (float): Latitude in EPSG:4326
@@ -43,11 +42,28 @@ class NAIPTileIndex:
             intersected_files (list): A list of URLs of NAIP tiles that *contain* the given (`lat`, `lon`) point
         
         Raises:
-            IndexError: Raised if no tile within the index cotains the given (`lat`, `lon`) point
+            IndexError: Raised if no tile within the index contains the given (`lat`, `lon`) point
         '''
 
         point = shapely.geometry.Point(float(lon), float(lat))
-        intersected_indices = list(self.tile_rtree.intersection(point.bounds))
+        geom = shapely.geometry.mapping(point)
+
+        return self.lookup_geom(geom)
+
+    def lookup_geom(self, geom):
+        '''Given a GeoJSON geometry, return the list of NAIP tiles that *contain* that feature.
+        
+        Args:
+            geom (dict): A GeoJSON geometry in EPSG:4326
+
+        Returns:
+            intersected_files (list): A list of URLs of NAIP tiles that *contain* the given `geom`
+        
+        Raises:
+            IndexError: Raised if no tile within the index fully contains the given `geom`
+        '''
+        shape = shapely.geometry.shape(geom)
+        intersected_indices = list(self.tile_rtree.intersection(shape.bounds))
 
         intersected_files = []
         tile_intersection = False
@@ -55,17 +71,16 @@ class NAIPTileIndex:
         for idx in intersected_indices:
             intersected_file = self.tile_index[idx][0]
             intersected_geom = self.tile_index[idx][1]
-            if intersected_geom.contains(point):
+            if intersected_geom.contains(shape):
                 tile_intersection = True
                 intersected_files.append(NAIPTileIndex.NAIP_BLOB_ROOT + intersected_file)
 
         if not tile_intersection and len(intersected_indices) > 0:
-            raise IndexError("There are overlaps with tile index, but no tile contains the point")
+            raise IndexError("There are overlaps with tile index, but no tile contains the shape")
         elif len(intersected_files) <= 0:
             raise IndexError("No tile intersections")
         else:
             return intersected_files
-
 
 def download_url(url, output_fn, verbose=False):
     '''Download a URL to file.
@@ -100,13 +115,13 @@ if __name__ == "__main__":
 
         # Test 1
         lat, lon = 47.644184, -122.139152 # on Microsoft's Redmond campus
-        tiles = naip_index.lookup(lat, lon)
-        assert "https://naipblobs.blob.core.windows.net/naip/v002/wa/2011/wa_100cm_2011/47122/m_4712223_se_10_1_20110826.tif" in tiles # We expect that the 2011 NAIP tile for this area is present in the results
+        tiles = naip_index.lookup_point(lat, lon)
+        assert "https://naipblobs.blob.core.windows.net/naip/v002/wa/2011/wa_100cm_2011/47122/m_4712223_se_10_1_20110826.tif" in tiles
 
         # Test 2
         lat, lon = -122.139152, 47.644184 # Swapped lat, lon points from the previous example
         try:
-            naip_index.lookup(lat, lon)
+            naip_index.lookup_point(lat, lon)
             assert False # We expect the previous line to throw an exception
         except IndexError as e:
             pass
@@ -114,7 +129,12 @@ if __name__ == "__main__":
         # Test 3
         lat, lon = 44.606377, -132.860376 # Pacific ocean
         try:
-            naip_index.lookup(lat, lon)
+            naip_index.lookup_point(lat, lon)
             assert False # We expect the previous line to throw an exception
         except IndexError as e:
             pass
+
+        # Test 4
+        geom = {"type":"Polygon","coordinates":[[[-75.406171,38.451649],[-75.406267,38.468741],[-75.423777,38.468678],[-75.423677,38.451587],[-75.406171,38.451649]]]} # a rectangle on the Delmarva peninsula
+        tiles = naip_index.lookup_geom(geom)
+        assert "https://naipblobs.blob.core.windows.net/naip/v002/de/2011/de_100cm_2011/38075/m_3807537_ne_18_1_20110602.tif" in tiles
