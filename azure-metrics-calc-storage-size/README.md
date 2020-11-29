@@ -1,4 +1,5 @@
 # Overview
+
 This tool will return the total blob and file sizes for all storage accounts in an Azure subscription.
 
 # Installing dependencies
@@ -30,7 +31,7 @@ Copy the <b>input code</b> from the browser URL:
 ![login](docs/device-login2.jpg)
 
 
-Paste the <b>input code</b> in theto code field:
+Paste the <b>input code</b> into the code field:
 
 
 ![login](docs/device-login3.jpg)

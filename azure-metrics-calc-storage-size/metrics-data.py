@@ -5,7 +5,6 @@ import datetime
 import pandas as pd
 import humanfriendly
 import math
-import os
 
 from azure.mgmt.resource import ResourceManagementClient
 from azure.mgmt.monitor import MonitorManagementClient
@@ -144,5 +143,5 @@ if __name__ == '__main__':
      subscription_id =  utils.get_subscription_id(credentials)
     
      file_name = get_used_avg_blob_capacity(credentials,subscription_id)
-     os.startfile(file_name)
+     print('Wrote results to {}'.format(file_name))
      

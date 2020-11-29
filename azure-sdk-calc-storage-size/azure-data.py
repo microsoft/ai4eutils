@@ -229,5 +229,5 @@ if __name__ == '__main__':
     azure_st.get_storage_size(options)
     azure_st.log_info("\n\nProgram ended on: " + str(datetime.datetime.now()) + "\n", Log_type.debug)
 
-    print('Finished writing logs to:\n{}\n{}\n\n'.format(log.debug_log,
+    print('Finished writing logs to:\n{}\n{}\n{}\n'.format(log.debug_log,
           log.blob_container_info_log,log.storage_info_log))

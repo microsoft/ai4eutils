@@ -4,7 +4,6 @@ from msrestazure.azure_active_directory import AADTokenCredentials
 from azure.mgmt.resource import SubscriptionClient
 
 import adal
-import webbrowser
 import datetime
 
 from pytz import timezone, utc
@@ -25,8 +24,12 @@ def authenticate_device_code(AuthenticationInfo):
     context = adal.AuthenticationContext(authority_uri, api_version=None)
     code = context.acquire_user_code(resource_uri, AuthenticationInfo.client_id)
     print(code['message'])
-    webbrowser.open(device_login_url + '?input='+ code['user_code'], new=2)
+    
+    # This doesn't work in a console environment
+    # webbrowser.open(device_login_url + '?input='+ code['user_code'], new=2)
 
+    print('To authenticate, open a browser to this URL:\n{}'.format(device_login_url + '?input='+ code['user_code']))
+    
     mgmt_token = context.acquire_token_with_device_code(resource_uri, code, AuthenticationInfo.client_id)
     credentials = AADTokenCredentials(mgmt_token, AuthenticationInfo.client_id)
 
