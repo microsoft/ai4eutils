@@ -1,3 +1,5 @@
+import numpy as np
+
 import rasterio
 from rasterio.windows import Window
 from rasterio.errors import RasterioIOError
@@ -44,8 +46,8 @@ class TileInferenceDataset(Dataset):
         self.num_chips = len(self.chip_coordinates)    
 
         if self.verbose:
-            print("Constructed TileInferenceDataset -- we have %d by %d file with %d channels with a dtype of %s" % (
-                height, width, self.num_channels, self.dtype
+            print("Constructed TileInferenceDataset -- we have %d by %d file with %d channels with a dtype of %s. We are sampling %d chips from it." % (
+                height, width, self.num_channels, self.dtype, self.num_chips
             ))
             
     def __getitem__(self, idx):
