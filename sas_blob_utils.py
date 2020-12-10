@@ -281,8 +281,8 @@ def list_blobs_in_container(
             contain blob names with this/these suffix(es). The blob names will
             be lowercased first before comparing with the suffix(es).
         rsearch: optional str, returned results will only contain blob names
-            that match this Python regex pattern at any point in the blob name.
-            Use '^' character to only match from the beginning of the blob name.
+            that match this regex. Can also be a list of regexes, in which case
+            blobs matching *any* of the regex's will be returned.            
         limit: int, maximum # of blob names to list
             if None, then returns all blob names
 
@@ -317,8 +317,17 @@ def list_blobs_in_container(
                 i += 1
                 suffix_ok = (blob_suffix is None
                              or blob.name.lower().endswith(blob_suffix))
-                regex_ok = (rsearch is None
-                            or re.search(rsearch, blob.name) is not None)
+                regex_ok = False
+                if rsearch is None:
+                    regex_ok = True
+                else:
+                    if not isinstance(rsearch,list):
+                        rsearch = [rsearch]
+                    # Check whether this blob name matches *any* of our regex's
+                    for expr in rsearch:
+                        if re.search(expr, blob.name) is not None:
+                            regex_ok = True
+                            break
                 if suffix_ok and regex_ok:
                     list_blobs.append(blob.name)
                     if limit is not None and len(list_blobs) == limit:

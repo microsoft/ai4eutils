@@ -153,7 +153,8 @@ def enumerate_blobs_to_file(
     Args:
         output_file: str, path to save list of files in container
             If ends in '.json', writes a JSON string. Otherwise, writes a
-            newline-delimited list
+            newline-delimited list. Can be None, in which case this is just a 
+            convenient wrapper for blob enumeration.
         account_name: str, Azure Storage account name
         container_name: str, Azure Blob Storage container name
         sas_token: optional str, container SAS token, leading ? will be removed if present.
@@ -163,8 +164,8 @@ def enumerate_blobs_to_file(
             contain blob names with this/these suffix(es). The blob names will
             be lowercased first before comparing with the suffix(es).
         rsearch: optional str, returned results will only contain blob names
-            that match this Python regex pattern at any point in the blob name.
-            Use '^' character to only match from the beginning of the blob name.
+            that match this regex. Can also be a list of regexes, in which case
+            blobs matching *any* of the regex's will be returned.            
         limit: int, maximum # of blob names to list
             if None, then returns all blob names
 
@@ -178,5 +179,6 @@ def enumerate_blobs_to_file(
     matched_blobs = sas_blob_utils.list_blobs_in_container(
         container_uri=container_uri, blob_prefix=blob_prefix,
         blob_suffix=blob_suffix, rsearch=rsearch, limit=limit)
-    write_list_to_file(output_file, matched_blobs)
+    if output_file is not None:
+        write_list_to_file(output_file, matched_blobs)
     return matched_blobs
