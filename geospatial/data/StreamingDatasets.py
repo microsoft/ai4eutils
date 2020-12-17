@@ -12,16 +12,17 @@ from torch.utils.data.dataset import IterableDataset
 
 class StreamingGeospatialDataset(IterableDataset):
     
-    def __init__(self, imagery_fns, label_fns=None, chip_size=256, num_chips_per_tile=200, windowed_sampling=False, transform=None, verbose=False):
+    def __init__(self, imagery_fns, label_fns=None, groups=None, chip_size=256, num_chips_per_tile=200, windowed_sampling=False, transform=None, verbose=False):
         """A torch Dataset for randomly sampling chips from a list of tiles. When used in conjunction with a DataLoader that has `num_workers>1` this Dataset will assign each worker to sample chips from disjoint sets of tiles.
 
         Args:
             imagery_fns: A list of filenames (or web addresses -- anything that `rasterio.open()` can read) pointing to imagery tiles.
             label_fns: A list of filenames of the same size as `imagery_fns` pointing to label mask tiles or `None` if the Dataset should operate in "imagery only mode". Note that we expect `imagery_fns[i]` and `label_fns[i]` to have the same dimension and coordinate system.
+            groups: Optional: A list of integers of the same size as `imagery_fns` that gives the "group" membership of each tile. This can be used to normalize imagery from different groups differently.
             chip_size: Desired size of chips (in pixels).
             num_chips_per_tile: Desired number of chips to sample for each tile.
             windowed_sampling: Flag indicating whether we should sample each chip with a read using `rasterio.windows.Window` or whether we should read the whole tile into memory, then sample chips.
-            transform: The torchvision.transform object to apply to each chip.
+            transform: A function to apply to each chip object. If this is `None`, then the only transformation applied to the loaded imagery will be to convert it to a `torch.Tensor`. If this is not `None`, then the function should return a `Torch.tensor`. Further, if `groups` is not `None` then the transform function should expect the imagery as the first argument and the group as the second argument.
             verbose: If `False` we will be quiet.
         """
 
@@ -31,6 +32,8 @@ class StreamingGeospatialDataset(IterableDataset):
         else:
             self.fns = list(zip(imagery_fns, label_fns)) 
             self.use_labels = True
+
+        self.groups = groups
 
         self.chip_size = chip_size
         self.num_chips_per_tile = num_chips_per_tile
@@ -74,13 +77,18 @@ class StreamingGeospatialDataset(IterableDataset):
             else:
                 img_fn = self.fns[idx]
 
+            if self.groups is not None:
+                group = self.groups[idx]
+            else:
+                group = None
+
             if self.verbose:
                 print("Worker %d, yielding file %d" % (worker_id, idx))
             
-            yield (img_fn, label_fn)
+            yield (img_fn, label_fn, group)
             
     def stream_chips(self):
-        for img_fn, label_fn in self.stream_tile_fns():
+        for img_fn, label_fn, group in self.stream_tile_fns():
             
             # Open file pointers
             img_fp = rasterio.open(img_fn, "r")
@@ -104,6 +112,7 @@ class StreamingGeospatialDataset(IterableDataset):
                     x = np.random.randint(0, width-self.chip_size)
                     y = np.random.randint(0, height-self.chip_size)
 
+                    # Read imagery
                     if self.windowed_sampling:
                         img = np.rollaxis(img_fp.read(window=Window(x, y, self.chip_size, self.chip_size)), 0, 3)
                         if self.use_labels:
@@ -116,11 +125,16 @@ class StreamingGeospatialDataset(IterableDataset):
                     # TODO: check for nodata and throw away the chip if necessary. Not sure how to do this in a dataset independent way.
                     
                     if self.use_labels:
-                        labels = transforms.ToTensor()(labels).squeeze()
+                        labels = torch.from_numpy(labels).squeeze()
 
                     if self.transform is not None:
-                        img = self.transform(img)
-                    
+                        if self.groups is None:
+                            img = self.transform(img)
+                        else:
+                            img = self.transform(img, group)
+                    else:
+                        img = torch.from_numpy(img)
+
                     if self.use_labels:
                         yield img, labels
                     else:
