@@ -43,7 +43,7 @@ class TileInferenceDataset(Dataset):
         for y in list(range(0, height - self.chip_size, stride)) + [height - self.chip_size]:
             for x in list(range(0, width - self.chip_size, stride)) + [width - self.chip_size]:
                 self.chip_coordinates.append((y,x))
-        self.num_chips = len(self.chip_coordinates)    
+        self.num_chips = len(self.chip_coordinates)
 
         if self.verbose:
             print("Constructed TileInferenceDataset -- we have %d by %d file with %d channels with a dtype of %s. We are sampling %d chips from it." % (
