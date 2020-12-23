@@ -278,7 +278,7 @@ subprocess.call(command)
 
 Another example for when you would like to specify an attribute field ("label" here) on the features to be used for a burn-in value:
 ```
-gdal_rasterize -a label -a_nodata 0 -ot Byte -tr 0.000269494585236 0.000269494585236 
+gdal_rasterize -a label -a_nodata 0 -ot Byte -tr 0.000269494585236 0.000269494585236 -co COMPRESS=LZW INPUT_SHAPEFILE.shp OUTPUT.tif
 ```
 `tr` is the target resolution ("Pixel Size" in `gdalinfo` if you already have an example raster file of the desired resolution).
 
