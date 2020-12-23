@@ -138,7 +138,7 @@ Map.addLayer(sentinel2_median_image, rgbVis, 'Sentinel RGB');
 
 #### Exporting Data to Google Drive
 
-You can export images, map tiles, tables and video from Earth Engine. The exports can be sent to your Google Drive account, to Google Cloud Storage or to a new Earth Engine asset. Read [here](https://developers.google.com/earth-engine/exporting) for more details.
+You can export images, map tiles, tables and video from Earth Engine. The exports can be sent to your Google Drive account, to Google Cloud Storage or to a new Earth Engine asset. Read [here](https://developers.google.com/earth-engine/exporting) for more details. [rclone](https://rclone.org/) is useful for programmatically downloading exported scenes from Google Drive.
 
 ```
 Export.image.toDrive({
