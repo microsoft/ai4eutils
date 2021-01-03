@@ -116,7 +116,7 @@ def list_blobs_in_container(container_name,account_name,sas_token,output_folder,
     
     # prefix = prefixes[0]; print(prefix)
     
-    print('Starting enumeration for prefix {}'.format(prefix))
+    print('Starting enumeration for container {}'.format(container_name))
     
     # Open the output file
     fn = path_utils.clean_filename(container_name) + '.log'
