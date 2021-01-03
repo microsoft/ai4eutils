@@ -143,9 +143,7 @@ class AzureStorageSize:
                 self.log_info("\nProcessing storage account: " + storage_account_name , Log_type.debug)
 
                 total_account_size = 0
-                #if(storage_account_name != 'aerialelephantsblobs'):
-                #    continue
-
+                
                 resource_group_name = self.get_storage_account_resource_group(storage_account.id)
                 account_key = self.get_storage_account_keys(resource_group_name, storage_account_name)['key1']
                 blob_containers = self.get_blob_containers_by_storage_account(storage_account_name, account_key)
