@@ -150,13 +150,14 @@ Note: These different methods have trade-offs. For a discussion about the differ
 <a name="make-a-thumbnail-from-a-raster"></a>
 
 ```
-gdal_translate -b 1,2,3 -of JPEG -outsize 400 0 INPUT.tif OUTPUT.jpg
+gdal_translate -b 1 -b 2 -b 3 -of JPEG -outsize 400 0 INPUT.tif OUTPUT.jpg
 ```
 
 Note: this assumes that the first three channels of the raster are RGB.
 
 Note: adjust "400" to control the width of the output, the "0" for height will maintain the original file's aspect ratio.
 
+Example: The following command will create a decent thumbnail from Sentinel 2 multi-channel imagery `gdal_translate -b 4 -b 3 -b 2 -scale 0 4000 0 255 -ot Byte -of JPEG -outsize 1024 0 INPUT_S2.tif OUTPUT.jpg`
 
 ### Merge aligned multi-channel rasters
 <a name="merge-aligned-multi-channel-rasters"></a>
