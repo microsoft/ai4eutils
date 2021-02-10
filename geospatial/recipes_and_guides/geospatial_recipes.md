@@ -150,7 +150,7 @@ Note: These different methods have trade-offs. For a discussion about the differ
 <a name="make-a-thumbnail-from-a-raster"></a>
 
 ```
-gdal_translate -b 1 2 3 -of JPEG -outsize 400 0 INPUT.tif OUTPUT.jpg
+gdal_translate -b 1,2,3 -of JPEG -outsize 400 0 INPUT.tif OUTPUT.jpg
 ```
 
 Note: this assumes that the first three channels of the raster are RGB.
