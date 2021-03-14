@@ -12,6 +12,9 @@
 #
 # Uses one thread/process per prefix.
 #
+# Optionally reads the size for each blob, which it separates from the filename
+# in the output files with \t .
+#
 
 #%% Constants and imports
 
@@ -96,7 +99,7 @@ pinit(Counter(-1))
 
 #%% Enumeration function
 
-def enumerate_prefix(prefix,sas_url,output_folder):
+def enumerate_prefix(prefix,sas_url,output_folder,get_sizes=False):
     
     account_name = sas_blob_utils.get_account_from_uri(sas_url)
     container_name = sas_blob_utils.get_container_from_uri(sas_url)
@@ -134,6 +137,8 @@ def enumerate_prefix(prefix,sas_url,output_folder):
                 name_starts_with=prefix,
                 results_per_page=n_blobs_per_page).by_page(
                 continuation_token=continuation_token)
+            
+            # This is a paged list of BlobProperties objects
             blobs = next(blobs_iter)
             
             n_blobs_this_page = 0
@@ -147,7 +152,10 @@ def enumerate_prefix(prefix,sas_url,output_folder):
                     hit_debug_limit = True
                     break
                 else:
-                    output_f.write(blob.name + '\n')
+                    size_string = ''
+                    if get_sizes:
+                        size_string = '\t' + str(blob.size)
+                    output_f.write(blob.name + size_string + '\n')
                     
             # print('Enumerated {} blobs'.format(n_blobs_this_page))
             cnt.increment(n=n_blobs_this_page)
@@ -169,13 +177,13 @@ def enumerate_prefix(prefix,sas_url,output_folder):
         
 from threading import Thread
 
-def enumerate_blobs_threads(prefixes,sas_url,output_folder):
+def enumerate_blobs_threads(prefixes,sas_url,output_folder,get_sizes=False):
     
     all_threads = []
     
     for s in prefixes:
         # print('Starting thread for prefix {}'.format(s))
-        t = Thread(name=s,target=enumerate_prefix,args=(s,sas_url,output_folder,))
+        t = Thread(name=s,target=enumerate_prefix,args=(s,sas_url,output_folder,get_sizes,))
         t.daemon = False
         t.start()
         all_threads.append(t)
@@ -189,13 +197,13 @@ def enumerate_blobs_threads(prefixes,sas_url,output_folder):
 
 from multiprocessing import Process
 
-def enumerate_blobs_processes(prefixes,sas_url,output_folder):
+def enumerate_blobs_processes(prefixes,sas_url,output_folder,get_sizes=False):
     
     all_processes = []
     
     for s in prefixes:
         # print('Starting process for prefix {}'.format(s))
-        p = Process(name=s,target=enumerate_prefix,args=(s,sas_url,output_folder,))
+        p = Process(name=s,target=enumerate_prefix,args=(s,sas_url,output_folder,get_sizes,))
         p.daemon = False
         p.start()
         all_processes.append(p)
@@ -207,7 +215,7 @@ def enumerate_blobs_processes(prefixes,sas_url,output_folder):
 
 #%% Main function    
         
-def enumerate_blobs(prefix_list_file,sas_url,output_folder):
+def enumerate_blobs(prefix_list_file,sas_url,output_folder,get_sizes=False):
 
     assert(os.path.isfile(prefix_list_file))
     os.makedirs(output_folder,exist_ok=True)
@@ -215,12 +223,26 @@ def enumerate_blobs(prefix_list_file,sas_url,output_folder):
     pinit(Counter(-1))
     prefixes = read_prefix_list(prefix_list_file)
     if use_threads:
-        enumerate_blobs_threads(prefixes,sas_url,output_folder)
+        enumerate_blobs_threads(prefixes,sas_url,output_folder,get_sizes)
     else:
-        enumerate_blobs_processes(prefixes,sas_url,output_folder)
+        enumerate_blobs_processes(prefixes,sas_url,output_folder,get_sizes)
     
-       
-#%% Driver
+
+#%% Test driver
+
+if False:
+    
+    #%%
+    
+    prefix_list_file = r'c:\temp\prefixes.txt'
+    sas_url = 'https://lilablobssc.blob.core.windows.net/nacti-unzipped?sv='    
+    output_folder = r'c:\temp\enumeration_test'
+    get_sizes = True
+    enumerate_blobs(prefix_list_file,sas_url,output_folder,get_sizes)
+    
+    # python parallel_enumerate_blobs.py "c:\temp\prefixes.txt" "https://lilablobssc.blob.core.windows.net/nacti-unzipped?sv=" "c:\temp\enumeration_test" --get_sizes
+    
+#%% Command-line driver
     
 if __name__ == '__main__':
 
@@ -238,6 +260,9 @@ if __name__ == '__main__':
     parser.add_argument(
         'output_folder',
         help='Output folder; one flat file per prefix will be written to this folder')
+    parser.add_argument(
+        '--get_sizes',action='store_true',
+        help='Include sizes for each blob in the output files (default: False)')
     
     if len(sys.argv[1:]) == 0:
         parser.print_help()
@@ -245,5 +270,5 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     
-    enumerate_blobs(args.prefix_list_file,args.sas_url,args.output_folder)
+    enumerate_blobs(args.prefix_list_file,args.sas_url,args.output_folder,args.get_sizes)
     
