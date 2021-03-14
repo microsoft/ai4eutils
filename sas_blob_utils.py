@@ -96,6 +96,32 @@ def get_account_from_uri(sas_uri: str) -> str:
     return loc.split('.')[0]
 
 
+def is_container_uri(sas_uri: str) -> bool:
+    """Returns True if the signed resource field in the URI "sr" is a container "c"
+    or a directory "d"
+    """
+    data = get_all_query_parts(sas_uri)
+    if 'sr' not in data:
+        return False
+
+    if 'c' in data['sr'] or 'd' in data['sr']:
+        return True
+    else:
+        return False
+
+def is_blob_uri(sas_uri: str) -> bool:
+    """Returns True if the signed resource field in the URI "sr" is a blob "b".
+    """
+    data = get_all_query_parts(sas_uri)
+    if 'sr' not in data:
+        return False
+
+    if 'b' in data['sr']:
+        return True
+    else:
+        return False
+
+
 def get_container_from_uri(sas_uri: str, unquote: bool = True) -> str:
     """
     Gets the container name from a Azure Blob Storage URI.
@@ -210,8 +236,7 @@ def get_permissions_from_uri(sas_uri: str) -> Set[str]:
     Returns: A set containing some of 'read', 'write', 'delete' and 'list'.
         Empty set returned if no permission specified in sas_uri.
     """
-    url_parts = parse.urlsplit(sas_uri)
-    data = parse.parse_qs(url_parts.query)
+    data = get_all_query_parts(sas_uri)
     permissions_set = set()
     if 'sp' in data:
         permissions = data['sp'][0]
@@ -263,13 +288,78 @@ def check_blob_exists(sas_uri: str, blob_name: Optional[str] = None) -> bool:
         return blob_client.exists()
 
 
+def upload_blob(container_uri: str, blob_name: str,
+                data: Union[Iterable[AnyStr], IO[AnyStr]],
+                overwrite: bool = False) -> str:
+    """
+    Creates a new blob of the given name from an IO stream.
+
+    Args:
+        container_uri: str, URI to a container, may include SAS token
+        blob_name: str, name of blob to upload
+        data: str, bytes, or IO stream
+            if str, assumes utf-8 encoding
+        overwrite: bool, whether to overwrite existing blob (if any)
+
+    Returns: str, URL to blob, includes SAS token if container_uri has SAS token
+    """
+    account_url, container, sas_token = split_container_uri(container_uri)
+    with BlobClient(account_url=account_url, container_name=container,
+                    blob_name=blob_name, credential=sas_token) as blob_client:
+        blob_client.upload_blob(data, overwrite=overwrite)
+        return blob_client.url
+
+
+def download_blob_to_stream(sas_uri: str) -> Tuple[io.BytesIO, BlobProperties]:
+    """
+    Downloads a blob to an IO stream.
+
+    Args:
+        sas_uri: str, URI to a blob
+
+    Returns:
+        output_stream: io.BytesIO, remember to close it when finished using
+        blob_properties: BlobProperties
+
+    Raises: azure.core.exceptions.ResourceNotFoundError, if sas_uri points
+        to a non-existant blob
+    """
+    with BlobClient.from_blob_url(sas_uri) as blob_client:
+        output_stream = io.BytesIO()
+        blob_client.download_blob().readinto(output_stream)
+        output_stream.seek(0)
+        blob_properties = blob_client.get_blob_properties()
+    return output_stream, blob_properties
+
+
+def build_blob_uri(container_uri: str, blob_name: str) -> str:
+    """
+    Args:
+        container_uri: str, URI to blob storage container
+            <account_url>/<container>?<sas_token>
+        blob_name: str, name of blob, not URL-escaped
+
+    Returns: str, blob URI <account_url>/<container>/<blob_name>?<sas_token>,
+        <blob_name> is URL-escaped
+    """
+    account_url, container, sas_token = split_container_uri(container_uri)
+
+    blob_name = parse.quote(blob_name)
+    blob_uri = f'{account_url}/{container}/{blob_name}'
+    if sas_token is not None:
+        blob_uri += f'?{sas_token}'
+    return blob_uri
+
+
+#%% Container
+
 def list_blobs_in_container(
         container_uri: str,
         blob_prefix: Optional[str] = None,
         blob_suffix: Optional[Union[str, Tuple[str]]] = None,
         rsearch: Optional[str] = None,
         limit: Optional[int] = None
-        ) -> List[str]:
+) -> List[str]:
     """
     Get a sorted list of blob names in this container.
 
@@ -282,14 +372,14 @@ def list_blobs_in_container(
             be lowercased first before comparing with the suffix(es).
         rsearch: optional str, returned results will only contain blob names
             that match this regex. Can also be a list of regexes, in which case
-            blobs matching *any* of the regex's will be returned.            
+            blobs matching *any* of the regex's will be returned.
         limit: int, maximum # of blob names to list
             if None, then returns all blob names
 
     Returns:
         sorted list of blob names, of length limit or shorter.
     """
-    
+
     print('listing blobs...')
     if (get_sas_token_from_uri(container_uri) is not None
             and get_resource_type_from_uri(container_uri) != 'container'):
@@ -321,7 +411,7 @@ def list_blobs_in_container(
                 if rsearch is None:
                     regex_ok = True
                 else:
-                    if not isinstance(rsearch,list):
+                    if not isinstance(rsearch, list):
                         rsearch = [rsearch]
                     # Check whether this blob name matches *any* of our regex's
                     for expr in rsearch:
@@ -378,50 +468,6 @@ def generate_writable_container_sas(account_name: str,
     return f'{account_url}/{container_name}?{container_sas_token}'
 
 
-def upload_blob(container_uri: str, blob_name: str,
-                data: Union[Iterable[AnyStr], IO[AnyStr]],
-                overwrite: bool = False) -> str:
-    """
-    Creates a new blob of the given name from an IO stream.
-
-    Args:
-        container_uri: str, URI to a container, may include SAS token
-        blob_name: str, name of blob to upload
-        data: str, bytes, or IO stream
-            if str, assumes utf-8 encoding
-        overwrite: bool, whether to overwrite existing blob (if any)
-
-    Returns: str, URL to blob, includes SAS token if container_uri has SAS token
-    """
-    account_url, container, sas_token = split_container_uri(container_uri)
-    with BlobClient(account_url=account_url, container_name=container,
-                    blob_name=blob_name, credential=sas_token) as blob_client:
-        blob_client.upload_blob(data, overwrite=overwrite)
-        return blob_client.url
-
-
-def download_blob_to_stream(sas_uri: str) -> Tuple[io.BytesIO, BlobProperties]:
-    """
-    Downloads a blob to an IO stream.
-
-    Args:
-        sas_uri: str, URI to a blob
-
-    Returns:
-        output_stream: io.BytesIO, remember to close it when finished using
-        blob_properties: BlobProperties
-
-    Raises: azure.core.exceptions.ResourceNotFoundError, if sas_uri points
-        to a non-existant blob
-    """
-    with BlobClient.from_blob_url(sas_uri) as blob_client:
-        output_stream = io.BytesIO()
-        blob_client.download_blob().readinto(output_stream)
-        output_stream.seek(0)
-        blob_properties = blob_client.get_blob_properties()
-    return output_stream, blob_properties
-
-
 def split_container_uri(container_uri: str) -> Tuple[str, str, Optional[str]]:
     """
     Args:
@@ -434,22 +480,3 @@ def split_container_uri(container_uri: str) -> Tuple[str, str, Optional[str]]:
     account_url, container_name = account_container.rsplit('/', maxsplit=1)
     sas_token = get_sas_token_from_uri(container_uri)
     return account_url, container_name, sas_token
-
-
-def build_blob_uri(container_uri: str, blob_name: str) -> str:
-    """
-    Args:
-        container_uri: str, URI to blob storage container
-            <account_url>/<container>?<sas_token>
-        blob_name: str, name of blob, not URL-escaped
-
-    Returns: str, blob URI <account_url>/<container>/<blob_name>?<sas_token>,
-        <blob_name> is URL-escaped
-    """
-    account_url, container, sas_token = split_container_uri(container_uri)
-
-    blob_name = parse.quote(blob_name)
-    blob_uri = f'{account_url}/{container}/{blob_name}'
-    if sas_token is not None:
-        blob_uri += f'?{sas_token}'
-    return blob_uri
