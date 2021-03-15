@@ -9,6 +9,7 @@
 
 #%% Constants and imports
 
+import os
 import sys
 import datetime
 import argparse
@@ -33,6 +34,13 @@ depth = 3
 
 def enumerate_folders():
         
+    #%% Make sure we're going to be able to write to the output file
+    
+    os.makedirs(os.dirname(output_file),exist_ok=True)
+    with open(output_file,'w') as f:
+        f.write('')
+    
+    
     #%% Derived constants
     
     storage_account_url_blob = 'https://' + account_name + '.blob.core.windows.net'
@@ -71,6 +79,7 @@ def enumerate_folders():
     
     folders_with_newlines = [s + '\n' for s in folders]
     
+    os.makedirs(os.dirname(output_file),exist_ok=True)
     with open(output_file,'w') as f:
         f.writelines(folders_with_newlines)
 
