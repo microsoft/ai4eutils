@@ -36,7 +36,7 @@ def enumerate_folders():
         
     #%% Make sure we're going to be able to write to the output file
     
-    os.makedirs(os.dirname(output_file),exist_ok=True)
+    os.makedirs(os.path.dirname(output_file),exist_ok=True)
     with open(output_file,'w') as f:
         f.write('')
     
@@ -79,7 +79,6 @@ def enumerate_folders():
     
     folders_with_newlines = [s + '\n' for s in folders]
     
-    os.makedirs(os.dirname(output_file),exist_ok=True)
     with open(output_file,'w') as f:
         f.writelines(folders_with_newlines)
 
