@@ -54,7 +54,7 @@ def enumerate_folders():
     container_client = blob_service_client.get_container_client(container_name)
     
     
-    #%% Enumerate row-level folders
+    #%% Enumerate folders
     
     start = datetime.datetime.now()
     
