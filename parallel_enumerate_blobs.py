@@ -23,8 +23,10 @@ import sys
 import time
 import argparse
 import multiprocessing
+import humanfriendly
 
 from azure.storage.blob import BlobServiceClient
+from tqdm import tqdm
 
 # Assumes that the parent folder of the ai4eutils repo is on the PYTHONPATH
 #
@@ -242,6 +244,7 @@ if False:
     
     # python parallel_enumerate_blobs.py "c:\temp\prefixes.txt" "https://lilablobssc.blob.core.windows.net/nacti-unzipped?sv=" "c:\temp\enumeration_test" --get_sizes
     
+
 #%% Command-line driver
     
 if __name__ == '__main__':
@@ -271,4 +274,65 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     enumerate_blobs(args.prefix_list_file,args.sas_url,args.output_folder,args.get_sizes)
+
+
+#%% Handy functions for working with the output files/folders from this script
+
+# import os; import humanfriendly; from tqdm import tqdm
+
+def parse_filenames_and_sizes(list_file):
+    """
+    Takes a file with tab-delimited filename/size pairs and returns a 
+    filename-->size dict.
+    """
     
+    filename_to_size = {}
+    
+    with open(list_file,'r') as f:
+        
+        for line in f:
+            if ('catalog.json' in line) or ('stac.json' in line):
+                continue
+            tokens = line.split('\t')
+            assert len(tokens) == 2
+            fn = tokens[0]            
+            size_str = tokens[1]
+            size = int(size_str)
+            if size == 0:
+                continue
+            filename_to_size[fn] = size
+            
+        # ...for each line
+        
+    # ...with open()        
+
+    return filename_to_size
+
+def parse_enumeration_folder(folder_name):
+    """
+    Takes a folder full of files with tab-delimited filename/size pairs
+    and returns a filename-->size dict.
+    """
+    
+    filename_to_size = {}
+    enumeration_files = os.listdir(folder_name)
+    for fn in enumeration_files:
+        filename_to_size.update(parse_filenames_and_sizes(os.path.join(folder_name,fn)))
+    return filename_to_size
+
+
+def summarize_enumeration_folder(folder_name):
+    
+    enumeration_files = os.listdir(folder_name)
+    total_files = 0
+    total_size = 0
+    
+    enumeration_files = os.listdir(folder_name)
+    for fn in tqdm(enumeration_files):
+        filename_to_size  = parse_filenames_and_sizes(os.path.join(folder_name,fn))
+        total_files += len(filename_to_size)
+        size_this_file = sum(filename_to_size .values())
+        assert isinstance(size_this_file,int) and size_this_file > 0
+        total_size += size_this_file
+    
+    print('Read {} files totaling {}'.format(total_files,humanfriendly.format_size(total_size)))
