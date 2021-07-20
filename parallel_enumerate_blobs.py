@@ -308,6 +308,7 @@ def parse_filenames_and_sizes(list_file):
 
     return filename_to_size
 
+
 def parse_enumeration_folder(folder_name):
     """
     Takes a folder full of files with tab-delimited filename/size pairs
@@ -322,6 +323,10 @@ def parse_enumeration_folder(folder_name):
 
 
 def summarize_enumeration_folder(folder_name):
+    """
+    Takes a folder full of files with tab-delimited filename/size pairs
+    and prints the number of files and total size.
+    """
     
     enumeration_files = os.listdir(folder_name)
     total_files = 0

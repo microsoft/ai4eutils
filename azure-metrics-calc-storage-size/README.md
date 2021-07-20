@@ -1,6 +1,6 @@
 # Overview
 
-This tool will return the total blob and file sizes for all storage accounts in an Azure subscription.
+This tool will return the total blob and file sizes for all storage accounts in an Azure subscription.  It uses the Azure Metrics API, i.e. it does not enumerate individual blobs.
 
 # Installing dependencies
 
