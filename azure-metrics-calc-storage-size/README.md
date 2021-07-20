@@ -5,10 +5,7 @@ This tool will return the total blob and file sizes for all storage accounts in 
 # Installing dependencies
 
 ```
-pip install azure==4.0.0 
-pip install pandas==0.24.1
-pip install --upgrade pip enum34
-pip install humanfriendly
+pip install azure==4.0.0 pandas>=0.24.1 enum34 humanfriendly
 ```
 
 # Running the application
