@@ -101,13 +101,15 @@ pinit(Counter(-1))
 
 #%% Enumeration function
 
-def enumerate_prefix(prefix,sas_url,output_folder,get_sizes=False):
+def enumerate_prefix(prefix,sas_url,output_folder,get_sizes=False,get_access_tiers=False):
     
     account_name = sas_blob_utils.get_account_from_uri(sas_url)
     container_name = sas_blob_utils.get_container_from_uri(sas_url)
     ro_sas_token = sas_blob_utils.get_sas_token_from_uri(sas_url)
-    assert not ro_sas_token.startswith('?')
-    ro_sas_token = '?' + ro_sas_token
+    
+    if ro_sas_token is not None:
+        assert not ro_sas_token.startswith('?')
+        ro_sas_token = '?' + ro_sas_token
 
     storage_account_url_blob = 'https://' + account_name + '.blob.core.windows.net'
     
@@ -153,11 +155,18 @@ def enumerate_prefix(prefix,sas_url,output_folder,get_sizes=False):
                     i_blob -= 1
                     hit_debug_limit = True
                     break
-                else:
+                else:                    
                     size_string = ''
                     if get_sizes:
                         size_string = '\t' + str(blob.size)
-                    output_f.write(blob.name + size_string + '\n')
+                    tier_string = ''
+                    if get_access_tiers:
+                        s = blob.blob_tier                        
+                        # This typically indicates a GPv1 Storage Account, with no tiering support
+                        if s is None:
+                            s = 'Unknown'
+                        tier_string = '\t' + s
+                    output_f.write(blob.name + size_string + tier_string + '\n')
                     
             # print('Enumerated {} blobs'.format(n_blobs_this_page))
             cnt.increment(n=n_blobs_this_page)
@@ -179,13 +188,15 @@ def enumerate_prefix(prefix,sas_url,output_folder,get_sizes=False):
         
 from threading import Thread
 
-def enumerate_blobs_threads(prefixes,sas_url,output_folder,get_sizes=False):
+def enumerate_blobs_threads(prefixes,sas_url,output_folder,
+                            get_sizes=False,get_access_tiers=False):
     
     all_threads = []
     
     for s in prefixes:
         # print('Starting thread for prefix {}'.format(s))
-        t = Thread(name=s,target=enumerate_prefix,args=(s,sas_url,output_folder,get_sizes,))
+        t = Thread(name=s,target=enumerate_prefix,args=(s,sas_url,output_folder,
+                                                        get_sizes,get_access_tiers,))
         t.daemon = False
         t.start()
         all_threads.append(t)
@@ -199,13 +210,15 @@ def enumerate_blobs_threads(prefixes,sas_url,output_folder,get_sizes=False):
 
 from multiprocessing import Process
 
-def enumerate_blobs_processes(prefixes,sas_url,output_folder,get_sizes=False):
+def enumerate_blobs_processes(prefixes,sas_url,output_folder,
+                              get_sizes=False,get_access_tiers=False):
     
     all_processes = []
-    
+        
     for s in prefixes:
         # print('Starting process for prefix {}'.format(s))
-        p = Process(name=s,target=enumerate_prefix,args=(s,sas_url,output_folder,get_sizes,))
+        p = Process(name=s,target=enumerate_prefix,args=(s,sas_url,output_folder,
+                                                         get_sizes,get_access_tiers,))
         p.daemon = False
         p.start()
         all_processes.append(p)
@@ -217,7 +230,7 @@ def enumerate_blobs_processes(prefixes,sas_url,output_folder,get_sizes=False):
 
 #%% Main function    
         
-def enumerate_blobs(prefix_list_file,sas_url,output_folder,get_sizes=False):
+def enumerate_blobs(prefix_list_file,sas_url,output_folder,get_sizes=False,get_access_tiers=False):
 
     assert(os.path.isfile(prefix_list_file))
     os.makedirs(output_folder,exist_ok=True)
@@ -225,9 +238,9 @@ def enumerate_blobs(prefix_list_file,sas_url,output_folder,get_sizes=False):
     pinit(Counter(-1))
     prefixes = read_prefix_list(prefix_list_file)
     if use_threads:
-        enumerate_blobs_threads(prefixes,sas_url,output_folder,get_sizes)
+        enumerate_blobs_threads(prefixes,sas_url,output_folder,get_sizes,get_access_tiers)
     else:
-        enumerate_blobs_processes(prefixes,sas_url,output_folder,get_sizes)
+        enumerate_blobs_processes(prefixes,sas_url,output_folder,get_sizes,get_access_tiers)
     
 
 #%% Test driver
@@ -236,11 +249,36 @@ if False:
     
     #%%
     
-    prefix_list_file = r'c:\temp\prefixes.txt'
-    sas_url = 'https://lilablobssc.blob.core.windows.net/nacti-unzipped?sv='    
-    output_folder = r'c:\temp\enumeration_test'
+    prefixes = set()
+    
+    # Generate test data
+    test_data_folder = r'C:\temp\test-data'
+    n_files = 100
+    for i_file in range(0,n_files):
+        fname = 'file_' + str(i_file).zfill(4) + '.txt'
+        prefixes.add(fname[0:8])
+        filename = os.path.join(test_data_folder,fname)
+        with open(filename,'w') as f:
+            f.write('This is a sample file.')
+    
+    with open(os.path.join(test_data_folder,'prefixes.txt'),'w') as f:
+        prefixes = list(prefixes)
+        prefixes.sort()
+        for s in prefixes:
+            f.write(s + '\n')
+        
+    #%%
+    
+    prefix_list_file = r'c:\temp\test-data\prefixes.txt'
+    sas_url = 'https://ai4epublictestdata.blob.core.windows.net/ai4eutils'
+    output_folder = r'c:\temp\test-data\enumeration'
     get_sizes = True
-    enumerate_blobs(prefix_list_file,sas_url,output_folder,get_sizes)
+    get_access_tiers = True
+    use_threads = True
+    if False:
+        prefixes = read_prefix_list(prefix_list_file)
+        prefix = prefixes[0]
+    enumerate_blobs(prefix_list_file,sas_url,output_folder,get_sizes,get_access_tiers)
     
     # python parallel_enumerate_blobs.py "c:\temp\prefixes.txt" "https://lilablobssc.blob.core.windows.net/nacti-unzipped?sv=" "c:\temp\enumeration_test" --get_sizes
     
@@ -266,6 +304,9 @@ if __name__ == '__main__':
     parser.add_argument(
         '--get_sizes',action='store_true',
         help='Include sizes for each blob in the output files (default: False)')
+    parser.add_argument(
+        '--get_access_tiers',action='store_true',
+        help='Include access tiers for each blob in the output files (default: False)')
     
     if len(sys.argv[1:]) == 0:
         parser.print_help()
@@ -273,7 +314,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     
-    enumerate_blobs(args.prefix_list_file,args.sas_url,args.output_folder,args.get_sizes)
+    enumerate_blobs(args.prefix_list_file,args.sas_url,args.output_folder,
+                    args.get_sizes,args.get_access_tiers)
 
 
 #%% Handy functions for working with the output files/folders from this script
