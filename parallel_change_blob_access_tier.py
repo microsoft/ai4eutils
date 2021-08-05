@@ -30,7 +30,7 @@ debug_max_files = -1
 verbose = False
 execute_changes = True
 force_tier_on_inferred_blobs = False
-use_threads = True
+use_threads = False
 verify_existence = False
 verify_access_tier = False
 
