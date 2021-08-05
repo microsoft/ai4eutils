@@ -27,7 +27,7 @@ from queue import Queue
 
 # Set to -1 to process all files
 debug_max_files = -1
-verbose = True
+verbose = False
 execute_changes = True
 force_tier_on_inferred_blobs = False
 use_threads = True
@@ -38,13 +38,13 @@ n_threads = 100
 n_print = 5000
 blobs_to_skip = 0
 
-# verbose = (debug_max_files > 0)
 sleep_time_after_op = 0.001
 
 # In blocks, not items
 max_queue_size = n_threads*4
 producer_block_size = 500
 
+# Tiers are case-sensitive; the API expects this case
 valid_tiers = set(['Hot','Cool','Archive'])
 
 
