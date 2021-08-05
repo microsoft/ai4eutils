@@ -1,8 +1,16 @@
 #
-# parallel_delete_blobs.py
+# parallel_change_blob_acces_tier.py
 #
-# Given a list of blobs to delete from a single container, 
-# execute those delete operations on parallel processes (default) or threads.
+# Given a list of blobs in a single container and a specified access
+# tier, set each of those blobs to that access tier (parallelizing across
+# threads or processes).
+#
+# Note to self:
+#
+# The set_standard_blob_tier_blobs supports lists of blobs, but 
+# I decided not to use that because a deeper looked shows that it's
+# still making a separate http request per blob anyway, and I hit some
+# issues trying to make this syntax work.
 #
 
 #%% Constants and imports
@@ -19,24 +27,28 @@ from queue import Queue
 
 # Set to -1 to process all files
 debug_max_files = -1
-verbose = False
-execute_deletions = True
-use_threads = False
+verbose = True
+execute_changes = True
+force_tier_on_inferred_blobs = False
+use_threads = True
+verify_existence = False
+verify_access_tier = False
 
 n_threads = 100
 n_print = 5000
-verify_existence = False
 blobs_to_skip = 0
 
 # verbose = (debug_max_files > 0)
-sleep_time_after_deletion = 0.001
+sleep_time_after_op = 0.001
 
 # In blocks, not items
 max_queue_size = n_threads*4
 producer_block_size = 500
 
+valid_tiers = set(['Hot','Cool','Archive'])
 
-#%% Multiprocessing init
+
+### Multiprocessing init
 
 def pinit(c):
     
@@ -73,7 +85,7 @@ class Counter(object):
 pinit(Counter(-1))
 
 
-#%% Load credentials and create client objects
+#%% Support functions
 
 def get_container_client(account_name,container_name,sas_token_file):
     
@@ -100,8 +112,6 @@ def get_container_client(account_name,container_name,sas_token_file):
     return container_client
     
 
-#%% Blob functions
-
 def blob_exists(container_client,blob_path):
     """
     Checks whether [blob_path] exists in the blob container [container_client]
@@ -115,7 +125,17 @@ def blob_exists(container_client,blob_path):
     return True
 
 
-def delete_blob(container_client, blob_path):
+def is_iterable(x):
+    try:
+        iter(x)
+    except TypeError:
+        return False
+    return True
+
+
+def set_access_tier(container_client, blob_path, access_tier):
+    
+    assert access_tier in valid_tiers
     
     if verify_existence:
         
@@ -123,18 +143,60 @@ def delete_blob(container_client, blob_path):
            print('Warning: {} does not exist'.format(blob_path))
            return
 
-    if not execute_deletions:
+    if verify_access_tier:
+        
+        try:
+            
+            blob_client = container_client.get_blob_client(blob_path)
+            properties = blob_client.get_blob_properties()
+            tier = properties['blob_tier']
+            
+            assert tier is not None, 'Error retrieving blob tier; is this a GPv1 storage account?'
+            assert tier in valid_tiers, 'Unrecognized tier {} for {}'.format(
+                tier,blob_path)
+            
+            # If this blob is already at the tier we want it
+            if tier == access_tier:
+                
+                # Force the tier if tier forcing is requested *and* the 
+                # tier is inferred, otherwise there's nothing to do here
+                force_tier = force_tier_on_inferred_blobs and properties['tier_inferred']
+                if not force_tier:
+                    print('Skipping {}, already at tier {}'.format(
+                        blob_path,access_tier))
+                    return
+                    
+        except Exception as e:
+            print('Error verifying access tier for {}: {}'.format(
+                blob_path,str(e)))
+                
+    # ...if we're verifying the access tier
+ 
+    if not execute_changes:
         
         if verbose:
-            print('Not deleting {}'.format(blob_path))        
+            print('Debug: not setting {} to {}'.format(blob_path,access_tier))
         return
     
     try:
 
+        check_archive_rehydration = (access_tier == 'Archive')
+        
+        if check_archive_rehydration:
+            blob_client = container_client.get_blob_client(blob_path)
+            properties = blob_client.get_blob_properties()
+            original_tier = properties['blob_tier']
+        
         if verbose:
-            print('Deleting {}'.format(blob_path))            
-        blob_client = container_client.get_blob_client(blob_path)    
-        blob_client.delete_blob()
+            print('Setting {} to {}'.format(blob_path,access_tier))
+            
+        container_client.set_standard_blob_tier_blobs(access_tier,blob_path)
+        
+        # Verify that we've started rehydrating
+        if check_archive_rehydration and (original_tier != 'Archive'):
+            archive_status = properties['archive_status']
+            if 'rehydrate-pending' not in archive_status:
+                print('Error: blob {} not re-hydrating'.format(blob_path))
         
     except Exception as e:
 
@@ -143,13 +205,16 @@ def delete_blob(container_client, blob_path):
             if 'BlobNotFound' in s:
                 print('{} does not exist'.format(blob_path))
             else:
-                print('Error deleting {}: {}'.format(blob_path,s))
+                print('Error setting {} to {}: {}'.format(
+                    blob_path,access_tier,s))
     
-    if sleep_time_after_deletion > 0:
-        time.sleep(sleep_time_after_deletion)
-        
+    if sleep_time_after_op > 0:
+        time.sleep(sleep_time_after_op)
 
-#%% Producer/consumer functions
+# ...def set_access_tier(...)        
+
+
+### Producer/consumer functions
 
 def producer_func(q,input_file):
     
@@ -193,25 +258,30 @@ def producer_func(q,input_file):
     print('Finished file processing')
     
     
-def consumer_func(q,container_client):
+def consumer_func(q,container_client,access_tier):
     
     if verbose:
         print('Consumer starting')
     
     while True:
-        block = q.get()
-        if verbose:
-            print('De-queuing {} paths'.format(len(block)))
-        for blob_path in block:
-            delete_blob(container_client,blob_path)
+        try:
+            block = q.get()
+            if verbose:
+                print('De-queuing {} paths'.format(len(block)))
+            for blob_path in block:
+                set_access_tier(container_client,blob_path,access_tier)
+        except Exception as e:
+            print('Consumer error: {}'.format(str(e)))
         q.task_done()
 
 
-#%% Thread-based implementation
+### Thread-based implementation
         
 from threading import Thread
 
-def parallel_delete_blobs_threads(container_client,input_file):
+def parallel_set_access_tier_threads(container_client,input_file,access_tier):
+    
+    assert os.path.isfile(input_file), 'File {} does not exist'.format(input_file)
     
     q = Queue(max_queue_size)
 
@@ -222,7 +292,7 @@ def parallel_delete_blobs_threads(container_client,input_file):
     for i in range(n_threads):
         if verbose:
             print('Starting thread {}'.format(i))
-        t = Thread(target=consumer_func,args=(q,container_client,))
+        t = Thread(target=consumer_func,args=(q,container_client,access_tier,))
         t.daemon = True
         t.start()
         
@@ -232,11 +302,13 @@ def parallel_delete_blobs_threads(container_client,input_file):
     print('Queue joined')
     
 
-#%% Process-based implementation
+### Process-based implementation
 
 from multiprocessing import Process
 
-def parallel_delete_blobs_processes(container_client,input_file):
+def parallel_set_access_tier_processes(container_client,input_file,access_tier):
+    
+    assert os.path.isfile(input_file), 'File {} does not exist'.format(input_file)
     
     q = multiprocessing.JoinableQueue(max_queue_size)
     
@@ -247,7 +319,7 @@ def parallel_delete_blobs_processes(container_client,input_file):
     for i in range(n_threads):
         if verbose:
             print('Starting process {}'.format(i))
-        p = Process(target=consumer_func,args=(q,container_client,))
+        p = Process(target=consumer_func,args=(q,container_client,access_tier,))
         p.daemon = True
         p.start()
         
@@ -257,15 +329,17 @@ def parallel_delete_blobs_processes(container_client,input_file):
     print('Queue joined')
 
 
-#%% Main function    
+### Main function    
         
-def parallel_delete_blobs(container_client,input_file):
+def parallel_set_access_tier(container_client,input_file,access_tier):
 
+    assert os.path.isfile(input_file), 'File {} does not exist'.format(input_file)
+    
     pinit(Counter(-1))
     if use_threads:
-        parallel_delete_blobs_threads(container_client,input_file)
+        parallel_set_access_tier_threads(container_client,input_file,access_tier)
     else:
-        parallel_delete_blobs_processes(container_client,input_file)
+        parallel_set_access_tier_processes(container_client,input_file,access_tier)
     
        
 #%% Interactive driver
@@ -277,14 +351,16 @@ if False:
     account_name = 'ai4epublictestdata'
     container_name = 'ai4eutils'
     sas_token_file = os.path.expanduser('~/tokens/ai4epublictestdata-ai4eutils-sas.txt')
-    input_file = r'c:\temp\test-blob-deletion.txt'
+    input_file = r'c:\temp\test-access-tier-changes.txt'
+    access_tier = 'Archive'
+    n_threads = 1
     
     container_client = get_container_client(account_name,container_name,sas_token_file)
-    parallel_delete_blobs(container_client,input_file)
-
+    parallel_set_access_tier(container_client,input_file,access_tier)
+    
     #%%
 
-    # python parallel_delete_blobs.py ai4edevshare ai4edebug "c:/users/dan/tokens/ai4edevshare_ai4edebug_sas_tokens.txt" "c:\temp\test_deletions.txt"
+    # python parallel_change_blob_access_tier.py ai4epublictestdata ai4eutils "c:/users/dan/tokens/ai4epublictestdata-ai4eutils-sas.txt" "c:\temp\test-access-tier-changes.txt" "Archive"
     
 #%% Command-line driver
     
@@ -293,7 +369,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
       
     parser = argparse.ArgumentParser(
-        description='Delete blobs in a container from a list of files')
+        description='Set a list of blobs in a container to a specific access tier')
     
     parser.add_argument(
         'account_name',
@@ -306,7 +382,10 @@ if __name__ == '__main__':
         help='Credentials file, with a read/write SAS token (starting with "?" on the second line)')
     parser.add_argument(
         'input_file',
-        help='List of blobs to delete')
+        help='List of blobs to change')
+    parser.add_argument(
+        'access_tier',
+        help='Target access tier, one of "Archive", "Hot", or "Cool" (case-sensitive)')
     
     if len(sys.argv[1:]) == 0:
         parser.print_help()
@@ -316,6 +395,7 @@ if __name__ == '__main__':
     
     assert(os.path.isfile(args.input_file)), 'Could not find file {}'.format(args.iput_file)
     
+    assert args.access_tier in valid_tiers, 'Invalid access tier: {}, valid values are Hot, Cool, Archive (case-sensitive)'.format(args.access_tier)
     container_client = get_container_client(args.account_name,args.container_name,args.sas_token_file)
-    parallel_delete_blobs(container_client,args.input_file)
+    parallel_set_access_tier(container_client,args.input_file,args.access_tier)
     
