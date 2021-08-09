@@ -32,7 +32,7 @@ execute_changes = True
 force_tier_on_inferred_blobs = False
 use_threads = False
 verify_existence = False
-verify_access_tier = False
+verify_access_tier = True
 
 n_threads = 100
 n_print = 5000
@@ -193,7 +193,7 @@ def set_access_tier(container_client, blob_path, access_tier):
         container_client.set_standard_blob_tier_blobs(access_tier,blob_path)
         
         # Verify that we've started rehydrating
-        if check_archive_rehydration and (original_tier != 'Archive'):
+        if check_archive_rehydration and (original_tier == 'Archive'):
             archive_status = properties['archive_status']
             if 'rehydrate-pending' not in archive_status:
                 print('Error: blob {} not re-hydrating'.format(blob_path))
