@@ -144,7 +144,8 @@ def enumerate_blobs_to_file(
         blob_prefix: Optional[str] = None,
         blob_suffix: Optional[Union[str, Tuple[str]]] = None,
         rsearch: Optional[str] = None,
-        limit: Optional[int] = None
+        limit: Optional[int] = None,
+        verbose: Optional[bool] = True
         ) -> List[str]:
     """
     Enumerates blobs in a container, and writes the blob names to an output
@@ -178,7 +179,7 @@ def enumerate_blobs_to_file(
         account=account_name, container=container_name, sas_token=sas_token)
     matched_blobs = sas_blob_utils.list_blobs_in_container(
         container_uri=container_uri, blob_prefix=blob_prefix,
-        blob_suffix=blob_suffix, rsearch=rsearch, limit=limit)
+        blob_suffix=blob_suffix, rsearch=rsearch, limit=limit, verbose=verbose)
     if output_file is not None:
         write_list_to_file(output_file, matched_blobs)
     return matched_blobs

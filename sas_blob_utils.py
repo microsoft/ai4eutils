@@ -358,7 +358,8 @@ def list_blobs_in_container(
         blob_prefix: Optional[str] = None,
         blob_suffix: Optional[Union[str, Tuple[str]]] = None,
         rsearch: Optional[str] = None,
-        limit: Optional[int] = None
+        limit: Optional[int] = None,
+        verbose: Optional[bool] = True
 ) -> List[str]:
     """
     Get a sorted list of blob names in this container.
@@ -403,7 +404,7 @@ def list_blobs_in_container(
             i = len(list_blobs)
         else:
             i = 0
-            for blob in tqdm(generator):
+            for blob in tqdm(generator,disable=(not verbose)):
                 i += 1
                 suffix_ok = (blob_suffix is None
                              or blob.name.lower().endswith(blob_suffix))
@@ -423,7 +424,9 @@ def list_blobs_in_container(
                     if limit is not None and len(list_blobs) == limit:
                         break
 
-    print(f'Enumerated {len(list_blobs)} matching blobs out of {i} total')
+    if verbose:
+        print(f'Enumerated {len(list_blobs)} matching blobs out of {i} total')
+        
     return sorted(list_blobs)  # sort for determinism
 
 
