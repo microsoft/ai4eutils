@@ -381,7 +381,9 @@ def list_blobs_in_container(
         sorted list of blob names, of length limit or shorter.
     """
 
-    print('listing blobs...')
+    if verbose:
+        print('Listing blobs')
+        
     if (get_sas_token_from_uri(container_uri) is not None
             and get_resource_type_from_uri(container_uri) != 'container'):
         raise ValueError('The SAS token provided is not for a container.')
@@ -400,7 +402,7 @@ def list_blobs_in_container(
             name_starts_with=blob_prefix)
 
         if blob_suffix is None and rsearch is None:
-            list_blobs = [blob.name for blob in tqdm(generator)]
+            list_blobs = [blob.name for blob in tqdm(generator,disable=(not verbose))]
             i = len(list_blobs)
         else:
             i = 0

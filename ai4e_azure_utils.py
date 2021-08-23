@@ -177,9 +177,12 @@ def enumerate_blobs_to_file(
         
     container_uri = sas_blob_utils.build_azure_storage_uri(
         account=account_name, container=container_name, sas_token=sas_token)
+    
     matched_blobs = sas_blob_utils.list_blobs_in_container(
         container_uri=container_uri, blob_prefix=blob_prefix,
         blob_suffix=blob_suffix, rsearch=rsearch, limit=limit, verbose=verbose)
+    
     if output_file is not None:
         write_list_to_file(output_file, matched_blobs)
+        
     return matched_blobs
