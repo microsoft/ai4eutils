@@ -1,5 +1,6 @@
 #%% Imports
 
+# import os; os.chdir(r'C:\git\ai4eutils\azure-sdk-calc-storage-size')
 from azure.mgmt.resource import ResourceManagementClient
 from azure.mgmt.storage import StorageManagementClient
 from azure.storage.blob import BlobClient, BlobServiceClient, ContainerClient
@@ -206,8 +207,9 @@ if __name__ == '__main__':
     #%%
 
     options = SizeOptions()
-    # options.account_names = ['']
-
+    # options.account_names = ['wildlifeblobssc']
+    # options.log_individual_blobs = False
+    
     log = CustomLogging()
 
     auth = Authentication()
@@ -219,7 +221,7 @@ if __name__ == '__main__':
 
     subscription_id = utils.get_subscription_id(credentials)
 
-    print('Writing logs to:\n{}\n{}\n{}\n\n'.format(
+    print('Writing logps to:\n{}\n{}\n{}\n\n'.format(
             log.debug_log, log.blob_container_info_log, log.storage_info_log))
 
     azure_st = AzureStorageSize(credentials, subscription_id, log)
