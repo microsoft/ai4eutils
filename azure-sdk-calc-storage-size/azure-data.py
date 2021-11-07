@@ -18,6 +18,7 @@ class SizeOptions:
 
     account_names = None
     container_names = None
+    log_individual_blobs = True
 
 
 class Authentication:
@@ -37,6 +38,7 @@ class Log_type(Enum):
     debug = 3
     storage_info = 4
     blob_info = 5
+    container_info = 6
 
 
 class AzureStorageSize:
@@ -176,17 +178,23 @@ class AzureStorageSize:
                         total_blob_container_size +=  size
                         total_account_size +=  size
 
-                        blob_size_str = humanfriendly.format_size(size)
-                        blob_container_size_str = humanfriendly.format_size(total_blob_container_size)
+                        
+                        if options.log_individual_blobs:
+                            
+                            blob_size_str = humanfriendly.format_size(size)                        
+                            message = "{}, {}, {}, {}".format("blob_size", blob.name, str(size), blob_size_str)
+                            self.log_info(message, Log_type.blob_info)
 
-                        message = "{}, {}, {}, {}".format("blob_size", blob.name, str(size), blob_size_str)
-                        self.log_info(message, Log_type.blob_info)
-
+                    # ...for each blob
+                    
+                    blob_container_size_str = humanfriendly.format_size(total_blob_container_size)
                     message = "{}, {}, {}, {}".format("blob_container_total", container_name,
                                                                             str(total_blob_container_size),
                                                                             blob_container_size_str)
-                    self.log_info(message, Log_type.blob_info)
+                    self.log_info(message, Log_type.container_info)
 
+                # ...for each container
+                
                 total_account_size_str = humanfriendly.format_size(total_account_size)
 
                 self.log_info("Number of storage accounts processed: " + str(count), Log_type.debug)
