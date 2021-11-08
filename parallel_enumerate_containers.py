@@ -4,7 +4,7 @@
 # Enumerate all blobs in all containers in a storage account, using one
 # thread/process per container.
 #
-# Creates one output file per container.
+# Creates one output file per container, with each row formatted as [name] \t [size] \t [access-tier].
 #
 
 #%% Constants and imports
@@ -36,6 +36,8 @@ sleep_time_per_page = 0.001
 
 # Limit the number of files to enumerate per thread; used only for debugging
 debug_max_files = -1
+get_sizes = True
+get_access_tiers = True
 
 
 #%% List containers in a storage account
@@ -155,7 +157,17 @@ def list_blobs_in_container(container_name,account_name,sas_token,output_folder,
                     hit_debug_limit = True
                     break
                 else:
-                    output_f.write(blob.name + '\n')
+                    size_string = ''
+                    if get_sizes:
+                        size_string = '\t' + str(blob.size)
+                    tier_string = ''
+                    if get_access_tiers:
+                        s = blob.blob_tier                        
+                        # This typically indicates a GPv1 Storage Account, with no tiering support
+                        if s is None:
+                            s = 'Unknown'
+                        tier_string = '\t' + s
+                    output_f.write(blob.name + size_string + tier_string + '\n')
                     
             # print('Enumerated {} blobs'.format(n_blobs_this_page))
             cnt.increment(n=n_blobs_this_page)
