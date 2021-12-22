@@ -57,6 +57,7 @@ def read_prefix_list(prefix_list_file):
     with open(prefix_list_file,'r') as f:
         prefixes = f.readlines()
     prefixes = [s.strip() for s in prefixes]
+    prefixes = [s for s in prefixes if len(s) > 0]
     print('Read {} prefixes from {}'.format(len(prefixes),
                                             prefix_list_file))
     return prefixes
@@ -102,7 +103,7 @@ pinit(Counter(-1))
 #%% Enumeration function
 
 def enumerate_prefix(prefix,sas_url,output_folder,get_sizes=False,get_access_tiers=False):
-    
+   
     account_name = sas_blob_utils.get_account_from_uri(sas_url)
     container_name = sas_blob_utils.get_container_from_uri(sas_url)
     ro_sas_token = sas_blob_utils.get_sas_token_from_uri(sas_url)
