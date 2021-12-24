@@ -15,7 +15,7 @@ import argparse
 
 from azure.storage.blob import BlobServiceClient
 from azure.core.exceptions import ResourceNotFoundError
-from queue import Queue        
+from queue import Queue
 
 # Set to -1 to process all files
 debug_max_files = -1

@@ -336,7 +336,7 @@ def parse_filenames_and_sizes(list_file):
             if ('catalog.json' in line) or ('stac.json' in line):
                 continue
             tokens = line.split('\t')
-            assert len(tokens) == 2
+            assert len(tokens) >= 2
             fn = tokens[0]            
             size_str = tokens[1]
             size = int(size_str)
