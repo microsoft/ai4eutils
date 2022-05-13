@@ -46,7 +46,7 @@ def write_html_image_list(filename=None,images=None,options={}):
     if 'defaultImageStyle' not in options:
         options['defaultImageStyle'] = \
         "margin:0px;margin-top:5px;margin-bottom:5px;"
-            
+        
     # Possibly split the html output for figures into multiple files; Chrome gets sad with
     # thousands of images in a single tab.        
     if 'maxFiguresPerHtmlFile' not in options:
@@ -59,7 +59,8 @@ def write_html_image_list(filename=None,images=None,options={}):
     # enforce that it's the latter to simplify downstream code
     for iImage,imageInfo in enumerate(images):
         if isinstance(imageInfo,str):
-            imageInfo = {'filename':imageInfo,'imageStyle':'','title':'','textStyle':''}            
+            imageInfo = {'filename':imageInfo,'imageStyle':'','title':'',
+                         'textStyle':'','linkTarget':''}
         if 'filename' not in imageInfo:
             imageInfo['filename'] = ''
         if 'imageStyle' not in imageInfo:
@@ -70,7 +71,7 @@ def write_html_image_list(filename=None,images=None,options={}):
             textStyle = options['defaultTextStyle']
             imageInfo['textStyle'] = options['defaultTextStyle']
         images[iImage] = imageInfo            
-        
+    
     # Remove leading directory information from filenames if requested
     if options['makeRelative'] == 1:
         
@@ -164,6 +165,7 @@ def write_html_image_list(filename=None,images=None,options={}):
         imageStyle = image['imageStyle']
         textStyle = image['textStyle']
         filename = image['filename']
+        linkTarget = image['linkTarget']
         
         # Remove unicode characters
         title = title.encode('ascii','ignore').decode('ascii')
@@ -174,8 +176,15 @@ def write_html_image_list(filename=None,images=None,options={}):
                     '<p style="{}">{}</p>\n'\
                     .format(textStyle,title))            
 
+        if len(linkTarget) > 0:
+            fHtml.write('<a href="{}">'.format(linkTarget))
+            # imageStyle.append(';border:0px;')
+        
         fHtml.write('<img src="{}" style="{}">\n'.format(filename,imageStyle))
         
+        if len(linkTarget) > 0:
+            fHtml.write('</a>')
+            
         if iImage != len(images)-1:
             fHtml.write('<br/>')             
             
