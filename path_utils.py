@@ -239,3 +239,15 @@ def flatten_path(pathname: str, separator_chars: str = SEPARATOR_CHARS) -> str:
     for c in separator_chars:
         s = s.replace(c, '~')
     return s
+
+
+#%% Platform-independent way to open files in their associated application
+
+import sys,subprocess
+
+def open_file(filename):
+    if sys.platform == "win32":
+        os.startfile(filename)
+    else:
+        opener = "open" if sys.platform == "darwin" else "xdg-open"
+        subprocess.call([opener, filename])

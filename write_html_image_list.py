@@ -5,7 +5,7 @@
 # shows all those images, with optional one-line headers above each.
 #
 # Each "filename" can also be a dict with elements 'filename','title',
-# 'imageStyle','textStyle'
+# 'imageStyle','textStyle', 'linkTarget'
 #
 # Strips directory information away if options.makeRelative == 1.
 #
@@ -67,6 +67,8 @@ def write_html_image_list(filename=None,images=None,options={}):
             imageInfo['imageStyle'] = options['defaultImageStyle']
         if 'title' not in imageInfo:
             imageInfo['title'] = ''
+        if 'linkTarget' not in imageInfo:
+            imageInfo['linkTarget'] = ''
         if 'textStyle' not in imageInfo:
             textStyle = options['defaultTextStyle']
             imageInfo['textStyle'] = options['defaultTextStyle']
