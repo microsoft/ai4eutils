@@ -11,6 +11,8 @@ import urllib
 import os
 import tempfile
 
+from urllib.parse import urlparse
+
 # pip install progressbar2
 import progressbar
 
@@ -53,7 +55,7 @@ def get_temp_folder(preferred_name='ai4eutils'):
     
            
 def download_url(url, destination_filename=None, progress_updater=None, 
-                 force_download=False):
+                 force_download=False, verbose=True):
     """
     Download a URL to a file.  If no file is specified, creates a temporary file, 
     with a semi-best-effort to avoid filename collisions.
@@ -85,12 +87,29 @@ def download_url(url, destination_filename=None, progress_updater=None,
             os.path.join(target_folder,url_as_filename)
         
     if (not force_download) and (os.path.isfile(destination_filename)):
-        print('Bypassing download of already-downloaded file {}'.format(os.path.basename(url_no_sas)))
+        if verbose:
+            print('Bypassing download of already-downloaded file {}'.format(os.path.basename(url_no_sas)))
     else:
-        print('Downloading file {} to {}'.format(os.path.basename(url_no_sas),destination_filename),end='')
+        if verbose:
+            print('Downloading file {} to {}'.format(os.path.basename(url_no_sas),destination_filename),end='')
         urllib.request.urlretrieve(url, destination_filename, progress_updater)  
         assert(os.path.isfile(destination_filename))
         nBytes = os.path.getsize(destination_filename)
-        print('...done, {} bytes.'.format(nBytes))
+        if verbose:
+            print('...done, {} bytes.'.format(nBytes))
         
     return destination_filename
+
+
+def download_relative_filename(url, output_base, verbose=False):
+    """
+    Download a URL to output_base, preserving relative path
+    """
+    
+    p = urlparse(url)
+    # remove the leading '/'
+    assert p.path.startswith('/'); relative_filename = p.path[1:]
+    destination_filename = os.path.join(output_base,relative_filename)
+    download_url(url, destination_filename, verbose=verbose)
+    
+

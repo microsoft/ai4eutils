@@ -7,15 +7,16 @@ See unit tests in tests/test_path_utils.py.
 
 #%% Imports and constants
 
-from datetime import datetime
+import zipfile
 import glob
 import ntpath
 import os
 import posixpath
 import string
-from typing import Container, Iterable, List, Optional, Tuple
 import unicodedata
 
+from datetime import datetime
+from typing import Container, Iterable, List, Optional, Tuple
 
 IMG_EXTENSIONS = ('.jpg', '.jpeg', '.gif', '.png')
 
@@ -251,3 +252,18 @@ def open_file(filename):
     else:
         opener = "open" if sys.platform == "darwin" else "xdg-open"
         subprocess.call([opener, filename])
+
+
+#%% zipfile management functions
+
+def unzip_file(input_file, output_folder=None):
+    """
+    Unzip a zipfile to the specified output folder, defaulting to the same location as
+    the input file    
+    """
+    
+    if output_folder is None:
+        output_folder = os.path.dirname(input_file)
+        
+    with zipfile.ZipFile(input_file, 'r') as zf:
+        zf.extractall(output_folder)

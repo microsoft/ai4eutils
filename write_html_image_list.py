@@ -24,7 +24,29 @@ import matlab_porting_tools as mpt
 #%% write_html_image_list
 
 def write_html_image_list(filename=None,images=None,options={}):
-
+    """
+    filename: the output file
+    
+    image: a list of image filenames or dictionaries with one or more of the following fields:
+        
+        filename
+        imageStyle
+        textStyle
+        title
+        linkTarget
+        
+    options: a dict with one or more of the following fields:
+        
+        hHtml
+        makeRelative
+        headerHtml
+        trailerHtml
+        defaultTextStyle
+        defaultImageStyle
+        maxFiguresPerHtmlFile
+        
+    """
+    
     # returns an options struct
     
     if 'fHtml' not in options:
