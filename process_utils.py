@@ -52,10 +52,14 @@ def execute_and_print(cmd,print_output=True):
 
 #%% Single-threaded test driver for execute_and_print
 
-if os.name == 'nt':
-    execute_and_print('echo hello && ping -n 5 127.0.0.1 && echo goodbye')  
-else:
-    execute_and_print('echo hello && sleep 1 && echo goodbye')  
+if False:
+    
+    #%%
+    
+    if os.name == 'nt':
+        execute_and_print('echo hello && ping -n 5 127.0.0.1 && echo goodbye')  
+    else:
+        execute_and_print('echo hello && sleep 1 && echo goodbye')  
  
 
 #%% Parallel test driver for execute_and_print
