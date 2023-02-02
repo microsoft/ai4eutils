@@ -288,7 +288,7 @@ gdal_rasterize -a label -a_nodata 0 -ot Byte -tr 0.000269494585236 0.00026949458
 <a name="convert-geotiff-to-cog"></a>
 
 ```
-gdalwarp -co BIGTIFF=YES -co NUM_THREADS=ALL_CPUS -co COMPRESS=LZW -CO PREDICTOR=2 -of COG INPUT.tif OUTPUT.tif
+gdalwarp -co BIGTIFF=YES -co NUM_THREADS=ALL_CPUS -co COMPRESS=LZW -co PREDICTOR=2 -of COG INPUT.tif OUTPUT.tif
 ```
 
 Note: This requires GDAL version >= 3.1
