@@ -167,6 +167,25 @@ def top_level_folder(p: str, windows: Optional[bool] = None) -> str:
     return result
 
 
+def safe_create_link(link_exists,link_new):
+    r"""
+    Create a symlink at link_new pointing to link_exists.
+    
+    If link_new already exists, make sure it's a link (not a file),
+    and if it has a different target than link_exists, remove and re-create
+    it.
+    
+    Errors of link_new already exists but it's not a link.
+    """    
+    if os.path.exists(link_new):
+        assert os.path.islink(link_new)
+        if not os.readlink(link_new) == link_exists:
+            os.remove(link_new)
+            os.symlink(link_exists,link_new)
+    else:
+        os.symlink(link_exists,link_new)
+        
+
 #%% Image-related path functions
 
 def is_image_file(s: str, img_extensions: Container[str] = IMG_EXTENSIONS
