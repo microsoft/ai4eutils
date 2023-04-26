@@ -17,13 +17,14 @@
 
 #%% Constants and imports
 
+import os
 import math
-import matlab_porting_tools as mpt
+import path_utils
 
 
 #%% write_html_image_list
 
-def write_html_image_list(filename=None,images=None,options={}):
+def write_html_image_list(filename=None,images=None,options=None):
     """
     filename: the output file
     
@@ -37,7 +38,7 @@ def write_html_image_list(filename=None,images=None,options={}):
         
     options: a dict with one or more of the following fields:
         
-        hHtml
+        fHtml
         makeRelative
         headerHtml
         trailerHtml
@@ -48,33 +49,35 @@ def write_html_image_list(filename=None,images=None,options={}):
     """
     
     # returns an options struct
-    
+    if options is None:
+        options = {}
+        
     if 'fHtml' not in options:
         options['fHtml'] = -1
     
-    if 'makeRelative' not in options:        
+    if 'makeRelative' not in options:
         options['makeRelative'] = 0
     
-    if 'headerHtml' not in options:
+    if 'headerHtml' not in options or options['headerHtml'] is None:
         options['headerHtml'] = ''        
     
-    if 'trailerHtml' not in options:
+    if 'trailerHtml' not in options or options['trailerHtml'] is None:
         options['trailerHtml'] = ''    
     
-    if 'defaultTextStyle' not in options:
+    if 'defaultTextStyle' not in options or options['defaultTextStyle'] is None:
         options['defaultTextStyle'] = \
         "font-family:calibri,verdana,arial;font-weight:bold;font-size:150%;text-align:left;margin:0px;"
 
-    if 'defaultImageStyle' not in options:
+    if 'defaultImageStyle' not in options or options['defaultImageStyle'] is None:
         options['defaultImageStyle'] = \
         "margin:0px;margin-top:5px;margin-bottom:5px;"
         
     # Possibly split the html output for figures into multiple files; Chrome gets sad with
     # thousands of images in a single tab.        
-    if 'maxFiguresPerHtmlFile' not in options:
+    if 'maxFiguresPerHtmlFile' not in options or options['maxFiguresPerHtmlFile'] is None:
         options['maxFiguresPerHtmlFile'] = math.inf    
     
-    if filename == None:
+    if filename is None:
         return options
     
     # images may be a list of images or a list of image/style/title dictionaries, 
@@ -100,12 +103,12 @@ def write_html_image_list(filename=None,images=None,options={}):
     if options['makeRelative'] == 1:
         
         for iImage in range(0,len(images)):
-            _,n,e = mpt.fileparts(images[iImage]['filename'])
+            _,n,e = path_utils.fileparts(images[iImage]['filename'])
             images[iImage]['filename'] = n + e
         
     elif options['makeRelative'] == 2:
         
-        baseDir,_,_ = mpt.fileparts(filename)
+        baseDir,_,_ = path_utils.fileparts(filename)
         if len(baseDir) > 1 and baseDir[-1] != '\\':
             baseDir = baseDir + '\\'
         
@@ -144,11 +147,11 @@ def write_html_image_list(filename=None,images=None,options={}):
                 iEnd = nImages-1
             
             trailer = 'image_{:05d}_{:05d}'.format(iStart,iEnd)
-            localFiguresHtmlFilename = mpt.insert_before_extension(filename,trailer)
+            localFiguresHtmlFilename = path_utils.insert_before_extension(filename,trailer)
             fMeta.write('<tr><td>\n')
             fMeta.write('<p style="padding-bottom:0px;margin-bottom:0px;text-align:left;font-family:''segoe ui'',calibri,arial;font-size:100%;text-decoration:none;font-weight:bold;">')
             fMeta.write('<a href="{}">Figures for images {} through {}</a></p></td></tr>\n'.format(
-                localFiguresHtmlFilename,iStart,iEnd))
+                os.path.basename(localFiguresHtmlFilename),iStart,iEnd))
             
             localImages = images[iStart:iEnd+1]
             
