@@ -48,6 +48,8 @@ def write_html_image_list(filename=None,images=None,options=None):
         
     """
     
+    print(options)
+    
     # returns an options struct
     if options is None:
         options = {}
@@ -84,8 +86,7 @@ def write_html_image_list(filename=None,images=None,options=None):
     # enforce that it's the latter to simplify downstream code
     for iImage,imageInfo in enumerate(images):
         if isinstance(imageInfo,str):
-            imageInfo = {'filename':imageInfo,'imageStyle':'','title':'',
-                         'textStyle':'','linkTarget':''}
+            imageInfo = {'filename':imageInfo}
         if 'filename' not in imageInfo:
             imageInfo['filename'] = ''
         if 'imageStyle' not in imageInfo:
