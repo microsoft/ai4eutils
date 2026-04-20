@@ -77,3 +77,19 @@ The following screenshot shows running a script to add a Sentinel-2 median compo
 
 ![Screenshot of QGIS demo'ing the result of adding a layer from a GEE query](../figures/QGIS_GEE_plugin.png)
 
+## Coloring polygons by random RGB, fast
+
+Credit to [@hannah-rae](https://github.com/hannah-rae)
+
+Go-to Properties -> Symbology -> Single Symbol -> Simple Fill -> Fill color dropdown (see first image) -> Assistant -> rand(1,n) (see second image) -> Apply -> result (see third image) -- no crashing!
+
+<img width="720" height="511" alt="image_720" src="https://github.com/user-attachments/assets/3976b9f0-dfdd-42ce-aee4-733417c9f65f" />
+<br/>
+
+<img width="720" height="661" alt="image_720" src="https://github.com/user-attachments/assets/f653be4f-598c-4823-ad49-fa2ae3618e64" />
+<br/>
+
+<img width="720" height="372" alt="image_720" src="https://github.com/user-attachments/assets/19a03e20-979f-45e4-ba14-28cc8043cbb9" />
+
+
+
