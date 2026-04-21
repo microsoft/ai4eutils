@@ -18,7 +18,7 @@ def walk_container(container_client: ContainerClient,
                    store_blobs: bool = True,
                    debug_max_items: int = -1) -> Tuple[List[str], List[str]]:
     """
-    Recursively walk folders a Azure Blob Storage container.
+    Recursively walk folders an Azure Blob Storage container.
 
     Based on:
     https://github.com/Azure/azure-sdk-for-python/blob/master/sdk/storage/azure-storage-blob/samples/blob_samples_walk_blob_hierarchy.py
